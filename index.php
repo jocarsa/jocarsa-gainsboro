@@ -117,4 +117,4 @@ if ($page === 'blog') {
     }
 }
 ?>
-
+<link rel="stylesheet" href="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa | lightslateblue.css">
