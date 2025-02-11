@@ -755,4 +755,5 @@ switch($action) {
 
 // (Removed all block editor helper functions and definitions)
 ?>
-
+<link rel="stylesheet" href="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa | lightslateblue.css">
+<script src="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa | lightslateblue.js"> </script>
