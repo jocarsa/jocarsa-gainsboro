@@ -181,6 +181,14 @@ function renderAdmin($content) {
                 margin-top: auto;
                 border-radius: 0;
             }
+            /* The new editor textarea style */
+            .jocarsa-lightslateblue {
+              
+                
+               
+                resize: vertical;
+                min-height: 200px;
+            }
         </style>
     </head>
     <body>
@@ -209,72 +217,6 @@ function getAllMedia($db) {
     }
     return $items;
 }
-
-/**************************************************************
- * BLOCK LIBRARY DEFINITIONS
- * For fields you want to pick from the media library,
- * use 'type' => 'media'.
- **************************************************************/
-$blockTypes = [
-    'hero' => [
-        'label' => 'Hero Banner',
-        'fields' => [
-            'title'           => ['type'=>'text',   'label'=>'Hero Title'],
-            'subtitle'        => ['type'=>'text',   'label'=>'Subtitle'],
-            'backgroundImage' => ['type'=>'media',  'label'=>'Background Image'],
-            'buttonText'      => ['type'=>'text',   'label'=>'Button Text (optional)'],
-            'buttonLink'      => ['type'=>'text',   'label'=>'Button Link (optional)'],
-        ],
-    ],
-    'article' => [
-        'label' => 'Article',
-        'fields' => [
-            'heading'         => ['type'=>'text',   'label'=>'Article Heading'],
-            'content'         => ['type'=>'textarea','label'=>'Article Content'],
-        ],
-    ],
-    'testimonial' => [
-        'label' => 'Testimonial',
-        'fields' => [
-            'quote'           => ['type'=>'textarea','label'=>'Quote'],
-            'author'          => ['type'=>'text',    'label'=>'Author'],
-        ],
-    ],
-    'gallery' => [
-        'label' => 'Image Gallery',
-        'fields' => [
-            'images'          => ['type'=>'textarea','label'=>'Image URLs (one per line)'],
-        ],
-    ],
-    'faq' => [
-        'label' => 'FAQ',
-        'fields' => [
-            'items'           => ['type'=>'textarea','label'=>"FAQ items (Q:..., A:...)"],
-        ],
-    ],
-    'cta' => [
-        'label' => 'Call To Action',
-        'fields' => [
-            'text'            => ['type'=>'textarea','label'=>'CTA Text'],
-            'buttonText'      => ['type'=>'text',    'label'=>'Button Text'],
-            'buttonLink'      => ['type'=>'text',    'label'=>'Button Link'],
-        ],
-    ],
-    'video' => [
-        'label' => 'Video Embed',
-        'fields' => [
-            'embedUrl'        => ['type'=>'text',    'label'=>'Embed URL'],
-            'caption'         => ['type'=>'text',    'label'=>'Caption (optional)'],
-        ],
-    ],
-    'columns' => [
-        'label' => '2 Columns',
-        'fields' => [
-            'leftContent'     => ['type'=>'textarea','label'=>'Left Column Content'],
-            'rightContent'    => ['type'=>'textarea','label'=>'Right Column Content'],
-        ],
-    ],
-];
 
 // Routing
 $action = $_GET['action'] ?? 'login';
@@ -502,7 +444,7 @@ switch($action) {
     case 'edit_page':
         requireLogin();
         $id = $_GET['id'] ?? null;
-        $pageData = ['id'=>'','title'=>'','content'=>json_encode([])];
+        $pageData = ['id'=>'','title'=>'','content'=>''];
 
         if ($id) {
             $st = $db->prepare("SELECT * FROM pages WHERE id = :id");
@@ -514,12 +456,10 @@ switch($action) {
             }
         }
 
-        // If saving
+        // If saving, use the simple textarea content
         if (isset($_POST['save_page'])) {
             $title = $_POST['title'] ?? '';
-            $blocks = $_POST['blocks'] ?? [];
-            $contentJson = json_encode($blocks, JSON_UNESCAPED_UNICODE);
-
+            $content = $_POST['content'] ?? '';
             if ($id) {
                 $st = $db->prepare("UPDATE pages SET title = :title, content = :content WHERE id = :id");
                 $st->bindValue(':id', $id, SQLITE3_INTEGER);
@@ -527,23 +467,14 @@ switch($action) {
                 $st = $db->prepare("INSERT INTO pages (title, content) VALUES (:title, :content)");
             }
             $st->bindValue(':title', $title, SQLITE3_TEXT);
-            $st->bindValue(':content', $contentJson, SQLITE3_TEXT);
+            $st->bindValue(':content', $content, SQLITE3_TEXT);
             $st->execute();
             header('Location: admin.php?action=list_pages');
             exit();
         }
 
-        // Decode existing content
-        $blocksData = [];
-        if (!empty($pageData['content'])) {
-            $tmp = json_decode($pageData['content'], true);
-            if (is_array($tmp)) {
-                $blocksData = $tmp;
-            }
-        }
-
-        // Build form
-        $html = "<header><h1>".($id ? "Edit Page" : "Add Page")."</h1></header>
+        // Build form with a simple textarea editor
+        $html = "<header><h1>" . ($id ? "Edit Page" : "Add Page") . "</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Home</a>
                      <a href='admin.php?action=list_pages'>Pages</a>
@@ -555,96 +486,13 @@ switch($action) {
                  </nav>
                  <form method='post'>
                     <label>Title:</label>
-                    <input type='text' name='title' value='".htmlspecialchars($pageData['title'])."' required>
-
-                    <h2>Block Builder</h2>
-                    <div id='block-builder-container'>";
-
-        // Existing blocks
-        foreach ($blocksData as $index => $block) {
-            $bType = $block['type'] ?? 'hero';
-            $html .= buildBlockEditorHtml($db, $index, $bType, $block, $blockTypes);
-        }
-
-        // The "Add New Block" button
-        $html .= "</div>
-                  <button type='button' onclick='addBlock()'>Add New Block</button>
-                  <button type='submit' name='save_page'>Save</button>
+                    <input type='text' name='title' value='" . htmlspecialchars($pageData['title']) . "' required>
+                    
+                    <label>Content:</label>
+                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>" . htmlspecialchars($pageData['content']) . "</textarea>
+                    
+                    <button type='submit' name='save_page'>Save</button>
                  </form>";
-
-        // Add the JavaScript that defines addBlock()  
-        $html .= "<script>
-var blockIndex = ".count($blocksData).";
-var blockTypes = ".json_encode($blockTypes).";
-var mediaLibrary = ".json_encode(getAllMedia($db)).";
-
-// Called by the 'Add New Block' button
-function addBlock() {
-    var container = document.getElementById('block-builder-container');
-    var newBlockType = 'hero';
-    var newBlockData = {};
-    var newHtml = buildBlockHtml(blockIndex, newBlockType, newBlockData);
-    var div = document.createElement('div');
-    div.classList.add('block-item');
-    div.innerHTML = newHtml;
-    container.appendChild(div);
-    blockIndex++;
-}
-
-// Build the HTML for a block
-function buildBlockHtml(i, type, blockData) {
-    let out = '';
-    // Block type <select>
-    out += `<label>Block Type:</label>
-            <select name='blocks[\${i}][type]' onchange='onBlockTypeChange(\${i}, this.value)'>`;
-    for (const tKey in blockTypes) {
-        const label = blockTypes[tKey].label;
-        const selected = (tKey === type) ? 'selected' : '';
-        out += `<option value='\${tKey}' \${selected}>\${label}</option>`;
-    }
-    out += '</select>';
-
-    // Fields
-    var fields = blockTypes[type].fields;
-    for (const fKey in fields) {
-        const fDef = fields[fKey];
-        const val = blockData[fKey] || '';
-        out += `<label>\${fDef.label}</label>`;
-        if (fDef.type === 'text') {
-            out += `<input type='text' name='blocks[\${i}][\${fKey}]' value='\${escapeHtml(val)}'>`;
-        } else if (fDef.type === 'textarea') {
-            out += `<textarea name='blocks[\${i}][\${fKey}]' rows='3'>\${escapeHtml(val)}</textarea>`;
-        } else if (fDef.type === 'media') {
-            out += `<select name='blocks[\${i}][\${fKey}]'>
-                     <option value=''>-- select media --</option>`;
-            for (const m of mediaLibrary) {
-                const selected = (m.filepath === val) ? 'selected' : '';
-                out += \`<option value='\${escapeHtml(m.filepath)}' \${selected}>\${escapeHtml(m.filename)}</option>\`;
-            }
-            out += '</select>';
-        }
-    }
-    return out;
-}
-
-// Called when user changes block type
-function onBlockTypeChange(i, newType) {
-    var blockContainer = document.querySelector('#block-builder-container .block-item:nth-child(' + (i+1) + ')');
-    var newHtml = buildBlockHtml(i, newType, {});
-    blockContainer.innerHTML = newHtml;
-}
-
-// Basic escaping
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;')
-              .replace(/\"/g, '&quot;')
-              .replace(/\'/g, '&#39;');
-}
-</script>";
-
         renderAdmin($html);
         break;
 
@@ -685,8 +533,8 @@ function escapeHtml(str) {
         while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
             $html .= "<tr>
                         <td>{$row['id']}</td>
-                        <td>".htmlspecialchars($row['title'])."</td>
-                        <td>".htmlspecialchars($row['created_at'])."</td>
+                        <td>" . htmlspecialchars($row['title']) . "</td>
+                        <td>" . htmlspecialchars($row['created_at']) . "</td>
                         <td>
                             <a href='admin.php?action=edit_blog&id={$row['id']}'>Edit</a> |
                             <a href='admin.php?action=delete_blog&id={$row['id']}' onclick='return confirm(\"Delete?\");'>Delete</a>
@@ -703,7 +551,7 @@ function escapeHtml(str) {
     case 'edit_blog':
         requireLogin();
         $id = $_GET['id'] ?? null;
-        $blogData = ['id'=>'','title'=>'','content'=>json_encode([]),'created_at'=>''];
+        $blogData = ['id'=>'','title'=>'','content'=>'','created_at'=>''];
 
         if ($id) {
             $st = $db->prepare("SELECT * FROM blog WHERE id = :id");
@@ -715,12 +563,10 @@ function escapeHtml(str) {
             }
         }
 
-        // If saving
+        // If saving, use the simple textarea content
         if (isset($_POST['save_blog'])) {
             $title = $_POST['title'] ?? '';
-            $blocks = $_POST['blocks'] ?? [];
-            $contentJson = json_encode($blocks, JSON_UNESCAPED_UNICODE);
-
+            $content = $_POST['content'] ?? '';
             if ($id) {
                 $st = $db->prepare("UPDATE blog SET title = :title, content = :content WHERE id = :id");
                 $st->bindValue(':id', $id, SQLITE3_INTEGER);
@@ -728,22 +574,14 @@ function escapeHtml(str) {
                 $st = $db->prepare("INSERT INTO blog (title, content) VALUES (:title, :content)");
             }
             $st->bindValue(':title', $title, SQLITE3_TEXT);
-            $st->bindValue(':content', $contentJson, SQLITE3_TEXT);
+            $st->bindValue(':content', $content, SQLITE3_TEXT);
             $st->execute();
             header('Location: admin.php?action=list_blog');
             exit();
         }
 
-        // Decode existing
-        $blocksData = [];
-        if (!empty($blogData['content'])) {
-            $tmp = json_decode($blogData['content'], true);
-            if (is_array($tmp)) {
-                $blocksData = $tmp;
-            }
-        }
-
-        $html = "<header><h1>".($id ? "Edit Blog Entry" : "Add Blog Entry")."</h1></header>
+        // Build form with a simple textarea editor
+        $html = "<header><h1>" . ($id ? "Edit Blog Entry" : "Add Blog Entry") . "</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Home</a>
                      <a href='admin.php?action=list_pages'>Pages</a>
@@ -755,90 +593,13 @@ function escapeHtml(str) {
                  </nav>
                  <form method='post'>
                     <label>Title:</label>
-                    <input type='text' name='title' value='".htmlspecialchars($blogData['title'])."' required>
-
-                    <h2>Block Builder</h2>
-                    <div id='block-builder-container'>";
-
-        // Existing blocks
-        foreach ($blocksData as $index => $block) {
-            $bType = $block['type'] ?? 'hero';
-            $html .= buildBlockEditorHtml($db, $index, $bType, $block, $blockTypes);
-        }
-
-        // "Add New Block" button
-        $html .= "</div>
-                  <button type='button' onclick='addBlock()'>Add New Block</button>
-                  <button type='submit' name='save_blog'>Save</button>
+                    <input type='text' name='title' value='" . htmlspecialchars($blogData['title']) . "' required>
+                    
+                    <label>Content:</label>
+                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>" . htmlspecialchars($blogData['content']) . "</textarea>
+                    
+                    <button type='submit' name='save_blog'>Save</button>
                  </form>";
-
-        // JavaScript snippet
-        $html .= "<script>
-var blockIndex = ".count($blocksData).";
-var blockTypes = ".json_encode($blockTypes).";
-var mediaLibrary = ".json_encode(getAllMedia($db)).";
-
-function addBlock() {
-    var container = document.getElementById('block-builder-container');
-    var newBlockType = 'hero';
-    var newBlockData = {};
-    var newHtml = buildBlockHtml(blockIndex, newBlockType, newBlockData);
-    var div = document.createElement('div');
-    div.classList.add('block-item');
-    div.innerHTML = newHtml;
-    container.appendChild(div);
-    blockIndex++;
-}
-
-function buildBlockHtml(i, type, blockData) {
-    let out = '';
-    out += `<label>Block Type:</label>
-            <select name='blocks[\${i}][type]' onchange='onBlockTypeChange(\${i}, this.value)'>`;
-    for (const tKey in blockTypes) {
-        const label = blockTypes[tKey].label;
-        const selected = (tKey === type) ? 'selected' : '';
-        out += `<option value='\${tKey}' \${selected}>\${label}</option>`;
-    }
-    out += '</select>';
-
-    var fields = blockTypes[type].fields;
-    for (const fKey in fields) {
-        const fDef = fields[fKey];
-        const val = blockData[fKey] || '';
-        out += `<label>\${fDef.label}</label>`;
-        if (fDef.type === 'text') {
-            out += `<input type='text' name='blocks[\${i}][\${fKey}]' value='\${escapeHtml(val)}'>`;
-        } else if (fDef.type === 'textarea') {
-            out += `<textarea name='blocks[\${i}][\${fKey}]' rows='3'>\${escapeHtml(val)}</textarea>`;
-        } else if (fDef.type === 'media') {
-            out += `<select name='blocks[\${i}][\${fKey}]'>
-                     <option value=''>-- select media --</option>`;
-            for (const m of mediaLibrary) {
-                const selected = (m.filepath === val) ? 'selected' : '';
-                out += \`<option value='\${escapeHtml(m.filepath)}' \${selected}>\${escapeHtml(m.filename)}</option>\`;
-            }
-            out += '</select>';
-        }
-    }
-    return out;
-}
-
-function onBlockTypeChange(i, newType) {
-    var blockContainer = document.querySelector('#block-builder-container .block-item:nth-child(' + (i+1) + ')');
-    var newHtml = buildBlockHtml(i, newType, {});
-    blockContainer.innerHTML = newHtml;
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;')
-              .replace(/\"/g, '&quot;')
-              .replace(/\'/g, '&#39;');
-}
-</script>";
-
         renderAdmin($html);
         break;
 
@@ -880,7 +641,7 @@ function escapeHtml(str) {
             $active = $row['active'] ? 'Yes' : 'No';
             $html .= "<tr>
                         <td>{$row['id']}</td>
-                        <td>".htmlspecialchars($row['name'])."</td>
+                        <td>" . htmlspecialchars($row['name']) . "</td>
                         <td>$active</td>
                         <td><a href='admin.php?action=activate_theme&id={$row['id']}'>Activate</a></td>
                       </tr>";
@@ -992,58 +753,6 @@ function escapeHtml(str) {
         exit();
 }
 
-
-/**
- * Helper function: buildBlockEditorHtml
- * Used in 'edit_page' or 'edit_blog' to render existing blocks
- */
-function buildBlockEditorHtml($db, $index, $bType, $blockData, $blockTypes) {
-    // Gather the entire media library for <select> usage:
-    $mediaItems = getAllMedia($db);
-
-    $out = "<div class='block-item'>";
-
-    // Block Type Select
-    $out .= "<label>Block Type:</label>
-             <select name='blocks[$index][type]' onchange='onBlockTypeChange($index, this.value)'>";
-
-    foreach ($blockTypes as $typeKey => $def) {
-        $selected = ($typeKey === $bType) ? 'selected' : '';
-        $label = $def['label'];
-        $out .= "<option value='$typeKey' $selected>$label</option>";
-    }
-    $out .= "</select>";
-
-    // Fields
-    if (isset($blockTypes[$bType])) {
-        foreach ($blockTypes[$bType]['fields'] as $fieldKey => $fieldDef) {
-            $val = $blockData[$fieldKey] ?? '';
-            $valEsc = htmlspecialchars($val);
-            $fLabel = $fieldDef['label'];
-            $fType = $fieldDef['type'];
-
-            $out .= "<label>$fLabel</label>";
-            if ($fType === 'text') {
-                $out .= "<input type='text' name='blocks[$index][$fieldKey]' value='$valEsc'>";
-            } elseif ($fType === 'textarea') {
-                $out .= "<textarea name='blocks[$index][$fieldKey]' rows='3'>$valEsc</textarea>";
-            } elseif ($fType === 'media') {
-                // Build a <select> from $mediaItems
-                $out .= "<select name='blocks[$index][$fieldKey]'>
-                         <option value=''>-- select media --</option>";
-                foreach ($mediaItems as $m) {
-                    $selected = ($m['filepath'] === $val) ? 'selected' : '';
-                    $safeFn   = htmlspecialchars($m['filename']);
-                    $safeFp   = htmlspecialchars($m['filepath']);
-                    $out .= "<option value='$safeFp' $selected>$safeFn</option>";
-                }
-                $out .= "</select>";
-            }
-        }
-    }
-
-    $out .= "</div>";
-    return $out;
-}
+// (Removed all block editor helper functions and definitions)
 ?>
 
