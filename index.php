@@ -79,37 +79,6 @@ function render($content, $menu, $theme, $title, $logo, $metaDescription, $metaT
     </html>";
 }
 
-// A helper to convert JSON-based blocks into HTML
-function renderBlocks($jsonContent) {
-    $blocks = json_decode($jsonContent, true);
-    // If it's not valid JSON or not an array, just return raw
-    if (!is_array($blocks)) {
-        return nl2br(htmlspecialchars($jsonContent));
-    }
-
-    $output = '';
-    foreach ($blocks as $block) {
-        $type = $block['type'] ?? 'text';
-        $text = $block['content'] ?? '';
-        $safeText = nl2br(htmlspecialchars($text));
-        switch ($type) {
-            case 'hero':
-                $output .= "<div class='hero-banner'>$safeText</div>";
-                break;
-            case 'article':
-                $output .= "<article class='article-block'>$safeText</article>";
-                break;
-            case 'testimonial':
-                $output .= "<blockquote class='testimonial-block'>$safeText</blockquote>";
-                break;
-            default:
-                // fallback
-                $output .= "<div class='generic-block'>$safeText</div>";
-        }
-    }
-    return $output;
-}
-
 // Build the menu
 $menu = "<a href='?page=inicio'>Inicio</a> | <a href='?page=blog'>Blog</a>";
 $result = $db->query("SELECT title FROM pages ORDER BY title ASC;");
@@ -128,7 +97,7 @@ if ($page === 'blog') {
         $blogContent .= "<article>
             <h2>" . htmlspecialchars($row['title']) . "</h2>
             <small>" . htmlspecialchars($row['created_at']) . "</small>
-            <div>" . renderBlocks($row['content']) . "</div>
+            <div>" . $row['content'] . "</div>
         </article><hr>";
     }
     render($blogContent, $menu, $activeTheme, $title, $logo, $metaDescription, $metaTags, $metaAuthor);
@@ -140,8 +109,8 @@ if ($page === 'blog') {
     $row = $result->fetchArray(SQLITE3_ASSOC);
 
     if ($row) {
-        // Use the block renderer
-        $pageContent = "<h2>" . htmlspecialchars($page) . "</h2><div>" . renderBlocks($row['content']) . "</div>";
+        // Directly output the HTML content
+        $pageContent = "<h2>" . htmlspecialchars($page) . "</h2><div>" . $row['content'] . "</div>";
         render($pageContent, $menu, $activeTheme, $title, $logo, $metaDescription, $metaTags, $metaAuthor);
     } else {
         render("<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $metaDescription, $metaTags, $metaAuthor);
