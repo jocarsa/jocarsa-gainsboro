@@ -9,50 +9,41 @@ define('ADMIN_PASS', 'jocarsa');
 // Connect DB
 $db = new SQLite3($dbPath);
 
-// Ensure all tables exist
+// Ensure all necessary tables exist
 $db->exec("CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT UNIQUE NOT NULL,
     content TEXT NOT NULL
-);");
+)");
 
 $db->exec("CREATE TABLE IF NOT EXISTS blog (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);");
-
-$db->exec("CREATE TABLE IF NOT EXISTS themes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE NOT NULL,
-    active BOOLEAN DEFAULT 0
-);");
+)");
 
 $db->exec("CREATE TABLE IF NOT EXISTS config (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT UNIQUE NOT NULL,
     value TEXT NOT NULL
-);");
+)");
 
-// NEW: MEDIA TABLE
+// MEDIA TABLE
 $db->exec("CREATE TABLE IF NOT EXISTS media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     filename TEXT NOT NULL,
     filepath TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);");
+)");
 
-/**
- * Check if user is logged in
- */
+// -----------------------------------------------------------
+// HELPER FUNCTIONS
+// -----------------------------------------------------------
 function isLoggedIn() {
     return (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true);
 }
 
-/**
- * Require login
- */
 function requireLogin() {
     if (!isLoggedIn()) {
         header('Location: admin.php');
@@ -60,18 +51,14 @@ function requireLogin() {
     }
 }
 
-/**
- * Render admin layout
- */
 function renderAdmin($content) {
     echo "<!DOCTYPE html>
     <html>
     <head>
         <meta charset='utf-8'>
         <title>Admin Panel</title>
-        <!-- Inline style or you can use a separate css/admin.css file -->
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
 
             body, h1, h2, p, a, table, th, td, label, textarea, input, select {
                 margin: 0;
@@ -161,12 +148,6 @@ function renderAdmin($content) {
             button:hover {
                 background-color: #2a2a2a;
             }
-            .block-item {
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                padding: 10px;
-                margin-top: 10px;
-            }
             .danger {
                 color: red;
             }
@@ -181,11 +162,7 @@ function renderAdmin($content) {
                 margin-top: auto;
                 border-radius: 0;
             }
-            /* The new editor textarea style */
             .jocarsa-lightslateblue {
-              
-                
-               
                 resize: vertical;
                 min-height: 200px;
             }
@@ -202,10 +179,6 @@ function renderAdmin($content) {
     </html>";
 }
 
-/**************************************************************
- * MEDIA LIBRARY HELPERS
- **************************************************************/
-
 /**
  * Return array of all media items
  */
@@ -216,6 +189,30 @@ function getAllMedia($db) {
         $items[] = $row;
     }
     return $items;
+}
+
+/**
+ * Return array of all CSS theme names from the /css folder
+ */
+function getAvailableThemes() {
+    // Adjust path if admin.php is in the same directory as front or not
+    $themeFiles = glob(__DIR__ . '/css/*.css');
+    $themes = [];
+    if ($themeFiles !== false) {
+        foreach ($themeFiles as $filePath) {
+            $themes[] = pathinfo($filePath, PATHINFO_FILENAME);
+        }
+    }
+    return $themes;
+}
+
+/**
+ * Update active theme in config table
+ */
+function setActiveTheme($db, $themeName) {
+    $st = $db->prepare("UPDATE config SET value = :val WHERE key = 'active_theme'");
+    $st->bindValue(':val', $themeName, SQLITE3_TEXT);
+    $st->execute();
 }
 
 // Routing
@@ -252,7 +249,7 @@ if (!isLoggedIn() && $action !== 'login') {
 switch($action) {
 
     // -----------------------------------------------------------
-    // LOGIN FORM
+    // LOGIN
     // -----------------------------------------------------------
     case 'login':
         $html = "<header><h1>Admin Login</h1></header>
@@ -272,7 +269,6 @@ switch($action) {
     // DASHBOARD
     // -----------------------------------------------------------
     case 'dashboard':
-        requireLogin();
         $html = "<header><h1>Admin Dashboard</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Home</a>
@@ -291,7 +287,6 @@ switch($action) {
     // MEDIA: LIST
     // -----------------------------------------------------------
     case 'list_media':
-        requireLogin();
         $mediaItems = getAllMedia($db);
         $html = "<header><h1>Media Library</h1></header>
                  <nav>
@@ -315,7 +310,8 @@ switch($action) {
                         <td>".htmlspecialchars($m['created_at'])."</td>
                         <td><img src='{$m['filepath']}' alt='' style='max-width:100px;'></td>
                         <td>
-                           <a href='admin.php?action=delete_media&id={$m['id']}' onclick='return confirm(\"Delete?\");'>Delete</a>
+                           <a href='admin.php?action=delete_media&id={$m['id']}' 
+                              onclick='return confirm(\"Delete?\");'>Delete</a>
                         </td>
                       </tr>";
         }
@@ -328,7 +324,6 @@ switch($action) {
     // MEDIA: UPLOAD
     // -----------------------------------------------------------
     case 'upload_media':
-        requireLogin();
         if (isset($_POST['upload'])) {
             if (!empty($_FILES['file']['name'])) {
                 $fileName = $_FILES['file']['name'];
@@ -338,7 +333,7 @@ switch($action) {
                 if (!is_dir($targetDir)) {
                     mkdir($targetDir, 0777, true);
                 }
-                // make a unique name
+                // Make a unique name
                 $uniqueName = time() . '-' . preg_replace('/[^a-zA-Z0-9._-]/','', $fileName);
                 $targetPath = $targetDir . $uniqueName;
 
@@ -384,7 +379,6 @@ switch($action) {
     // MEDIA: DELETE
     // -----------------------------------------------------------
     case 'delete_media':
-        requireLogin();
         $id = $_GET['id'] ?? null;
         if ($id) {
             $st = $db->prepare("SELECT * FROM media WHERE id = :id");
@@ -408,7 +402,6 @@ switch($action) {
     // PAGES: LIST
     // -----------------------------------------------------------
     case 'list_pages':
-        requireLogin();
         $res = $db->query("SELECT * FROM pages ORDER BY id DESC");
         $html = "<header><h1>Pages</h1></header>
                  <nav>
@@ -430,7 +423,8 @@ switch($action) {
                         <td>".htmlspecialchars($row['title'])."</td>
                         <td>
                             <a href='admin.php?action=edit_page&id={$row['id']}'>Edit</a> | 
-                            <a href='admin.php?action=delete_page&id={$row['id']}' onclick='return confirm(\"Delete?\");'>Delete</a>
+                            <a href='admin.php?action=delete_page&id={$row['id']}'
+                               onclick='return confirm(\"Delete?\");'>Delete</a>
                         </td>
                       </tr>";
         }
@@ -439,10 +433,9 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // PAGES: EDIT
+    // PAGES: EDIT (Add / Update)
     // -----------------------------------------------------------
     case 'edit_page':
-        requireLogin();
         $id = $_GET['id'] ?? null;
         $pageData = ['id'=>'','title'=>'','content'=>''];
 
@@ -456,9 +449,8 @@ switch($action) {
             }
         }
 
-        // If saving, use the simple textarea content
         if (isset($_POST['save_page'])) {
-            $title = $_POST['title'] ?? '';
+            $title   = $_POST['title']   ?? '';
             $content = $_POST['content'] ?? '';
             if ($id) {
                 $st = $db->prepare("UPDATE pages SET title = :title, content = :content WHERE id = :id");
@@ -473,7 +465,6 @@ switch($action) {
             exit();
         }
 
-        // Build form with a simple textarea editor
         $html = "<header><h1>" . ($id ? "Edit Page" : "Add Page") . "</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Home</a>
@@ -489,7 +480,8 @@ switch($action) {
                     <input type='text' name='title' value='" . htmlspecialchars($pageData['title']) . "' required>
                     
                     <label>Content:</label>
-                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>" . htmlspecialchars($pageData['content']) . "</textarea>
+                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>"
+                    . htmlspecialchars($pageData['content']) . "</textarea>
                     
                     <button type='submit' name='save_page'>Save</button>
                  </form>";
@@ -500,7 +492,6 @@ switch($action) {
     // PAGES: DELETE
     // -----------------------------------------------------------
     case 'delete_page':
-        requireLogin();
         $id = $_GET['id'] ?? null;
         if ($id) {
             $st = $db->prepare("DELETE FROM pages WHERE id = :id");
@@ -514,7 +505,6 @@ switch($action) {
     // BLOG: LIST
     // -----------------------------------------------------------
     case 'list_blog':
-        requireLogin();
         $res = $db->query("SELECT * FROM blog ORDER BY id DESC");
         $html = "<header><h1>Blog Entries</h1></header>
                  <nav>
@@ -537,7 +527,8 @@ switch($action) {
                         <td>" . htmlspecialchars($row['created_at']) . "</td>
                         <td>
                             <a href='admin.php?action=edit_blog&id={$row['id']}'>Edit</a> |
-                            <a href='admin.php?action=delete_blog&id={$row['id']}' onclick='return confirm(\"Delete?\");'>Delete</a>
+                            <a href='admin.php?action=delete_blog&id={$row['id']}'
+                               onclick='return confirm(\"Delete?\");'>Delete</a>
                         </td>
                       </tr>";
         }
@@ -549,7 +540,6 @@ switch($action) {
     // BLOG: EDIT
     // -----------------------------------------------------------
     case 'edit_blog':
-        requireLogin();
         $id = $_GET['id'] ?? null;
         $blogData = ['id'=>'','title'=>'','content'=>'','created_at'=>''];
 
@@ -563,9 +553,8 @@ switch($action) {
             }
         }
 
-        // If saving, use the simple textarea content
         if (isset($_POST['save_blog'])) {
-            $title = $_POST['title'] ?? '';
+            $title   = $_POST['title']   ?? '';
             $content = $_POST['content'] ?? '';
             if ($id) {
                 $st = $db->prepare("UPDATE blog SET title = :title, content = :content WHERE id = :id");
@@ -580,7 +569,6 @@ switch($action) {
             exit();
         }
 
-        // Build form with a simple textarea editor
         $html = "<header><h1>" . ($id ? "Edit Blog Entry" : "Add Blog Entry") . "</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Home</a>
@@ -596,7 +584,8 @@ switch($action) {
                     <input type='text' name='title' value='" . htmlspecialchars($blogData['title']) . "' required>
                     
                     <label>Content:</label>
-                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>" . htmlspecialchars($blogData['content']) . "</textarea>
+                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>"
+                    . htmlspecialchars($blogData['content']) . "</textarea>
                     
                     <button type='submit' name='save_blog'>Save</button>
                  </form>";
@@ -607,7 +596,6 @@ switch($action) {
     // BLOG: DELETE
     // -----------------------------------------------------------
     case 'delete_blog':
-        requireLogin();
         $id = $_GET['id'] ?? null;
         if ($id) {
             $st = $db->prepare("DELETE FROM blog WHERE id = :id");
@@ -618,11 +606,12 @@ switch($action) {
         exit();
 
     // -----------------------------------------------------------
-    // THEMES: LIST
+    // THEMES: LIST & ACTIVATE
     // -----------------------------------------------------------
     case 'list_themes':
-        requireLogin();
-        $themes = $db->query("SELECT * FROM themes ORDER BY id ASC");
+        // We'll gather from the folder, not from a DB table
+        $themes       = getAvailableThemes();
+        $activeTheme  = $db->querySingle("SELECT value FROM config WHERE key='active_theme'");
         $html = "<header><h1>Themes</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Home</a>
@@ -632,64 +621,43 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Config</a>
                      <a href='admin.php?action=list_media'>Media</a>
                      <a href='admin.php?action=logout'>Logout</a>
-                 </nav>
-                 <p><a href='admin.php?action=add_theme'>[+] Add Theme</a></p>
-                 <table>
-                    <tr><th>ID</th><th>Name</th><th>Active</th><th>Actions</th></tr>";
+                 </nav>";
 
-        while ($row = $themes->fetchArray(SQLITE3_ASSOC)) {
-            $active = $row['active'] ? 'Yes' : 'No';
+        // If no .css files are found, show a message
+        if (empty($themes)) {
+            $html .= "<p>No themes found in the css folder.</p>";
+            renderAdmin($html);
+            break;
+        }
+
+        $html .= "<table>
+                    <tr><th>Theme Name</th><th>Active</th><th>Action</th></tr>";
+        foreach ($themes as $tName) {
+            $isActive = ($tName === $activeTheme) ? 'Yes' : 'No';
             $html .= "<tr>
-                        <td>{$row['id']}</td>
-                        <td>" . htmlspecialchars($row['name']) . "</td>
-                        <td>$active</td>
-                        <td><a href='admin.php?action=activate_theme&id={$row['id']}'>Activate</a></td>
+                        <td>$tName</td>
+                        <td>$isActive</td>
+                        <td>";
+            if ($isActive === 'No') {
+                $html .= "<a href='admin.php?action=activate_theme&theme=$tName'>Activate</a>";
+            } else {
+                $html .= "Already Active";
+            }
+            $html .= "</td>
                       </tr>";
         }
         $html .= "</table>";
+
         renderAdmin($html);
         break;
 
-    // ADD THEME
-    case 'add_theme':
-        requireLogin();
-        if (isset($_POST['add_theme'])) {
-            $name = $_POST['name'] ?? '';
-            if ($name) {
-                $st = $db->prepare("INSERT OR IGNORE INTO themes (name, active) VALUES (:name, 0)");
-                $st->bindValue(':name', $name, SQLITE3_TEXT);
-                $st->execute();
-            }
-            header('Location: admin.php?action=list_themes');
-            exit();
-        }
-        $html = "<header><h1>Add Theme</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Home</a>
-                     <a href='admin.php?action=list_pages'>Pages</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Themes</a>
-                     <a href='admin.php?action=list_config'>Config</a>
-                     <a href='admin.php?action=list_media'>Media</a>
-                     <a href='admin.php?action=logout'>Logout</a>
-                 </nav>
-                 <form method='post'>
-                    <label>Theme Name:</label>
-                    <input type='text' name='name' required>
-                    <button type='submit' name='add_theme'>Add Theme</button>
-                 </form>";
-        renderAdmin($html);
-        break;
-
-    // ACTIVATE THEME
     case 'activate_theme':
-        requireLogin();
-        $id = $_GET['id'] ?? null;
-        if ($id) {
-            $db->exec("UPDATE themes SET active = 0");
-            $st = $db->prepare("UPDATE themes SET active = 1 WHERE id = :id");
-            $st->bindValue(':id', $id, SQLITE3_INTEGER);
-            $st->execute();
+        $themeToActivate = $_GET['theme'] ?? '';
+        // Verify themeToActivate is an actual .css file
+        $themes = getAvailableThemes();
+        if (in_array($themeToActivate, $themes)) {
+            // Update active_theme in config
+            setActiveTheme($db, $themeToActivate);
         }
         header('Location: admin.php?action=list_themes');
         exit();
@@ -698,7 +666,6 @@ switch($action) {
     // CONFIG: LIST
     // -----------------------------------------------------------
     case 'list_config':
-        requireLogin();
         if (isset($_POST['save_config'])) {
             foreach ($_POST['config'] as $k => $v) {
                 $st = $db->prepare("UPDATE config SET value = :val WHERE key = :key");
@@ -752,8 +719,7 @@ switch($action) {
         }
         exit();
 }
-
-// (Removed all block editor helper functions and definitions)
 ?>
 <link rel="stylesheet" href="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa | lightslateblue.css">
-<script src="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa | lightslateblue.js"> </script>
+<script src="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa | lightslateblue.js"></script>
+
