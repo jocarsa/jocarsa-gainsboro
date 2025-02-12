@@ -1,0 +1,118 @@
+/* adminlike.css
+   A front-end theme that matches the style of the admin panel */
+
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
+
+/* Global Resets */
+html, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Ubuntu', Arial, sans-serif;
+    background-color: #f4f4f4; /* Light gray background */
+    color: #333;              /* Dark text for contrast */
+}
+
+/* HEADER */
+header {
+    background-color: #3a3a3a; /* Dark gray, same as admin top bar */
+    color: gainsboro;          /* Gainsboro text */
+    padding: 20px;
+    border-radius: 0;          /* Keep corners squared or lightly adjust if desired */
+    text-align: center;        /* Centered heading content */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    display: inline-block; /* Let the logo and title align horizontally */
+}
+
+header h1 img {
+    height: 40px;
+    margin-right: 10px;
+    vertical-align: middle; 
+}
+
+/* NAVIGATION */
+nav {
+    background-color: #444; /* Slightly lighter than header */
+    padding: 10px;
+    text-align: center;
+    border-radius: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 0 10px;
+    padding: 8px 15px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+nav a:hover {
+    background-color: #3a3a3a; /* same color as header */
+}
+
+/* MAIN CONTENT */
+main {
+    margin: 20px auto;
+    max-width: 1000px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+main h2 {
+    margin-top: 0;
+    font-size: 1.6rem;
+    color: #3a3a3a;
+}
+
+/* ARTICLES (BLOG ENTRIES, ETC.) */
+article {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+article h3 {
+    margin-top: 0;
+    font-size: 1.4rem;
+    color: #3a3a3a;
+}
+
+article time {
+    display: block;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+/* FOOTER */
+footer {
+    background-color: #3a3a3a;
+    color: gainsboro;
+    padding: 20px;
+    text-align: center;
+    margin-top: 20px;      /* Space above the footer */
+    border-radius: 0;
+}
+
+footer img {
+    height: 20px;
+    vertical-align: middle;
+}
+
+/* Horizontal Rules */
+hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 20px 0;
+}
+
