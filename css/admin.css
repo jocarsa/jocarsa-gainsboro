@@ -1,5 +1,5 @@
 /* adminlike.css
-   A front-end theme that matches the style of the admin panel */
+   Un tema para el front-end con estilo similar al panel de administración */
 
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
 
@@ -9,24 +9,23 @@ html, body {
     padding: 0;
     box-sizing: border-box;
     font-family: 'Ubuntu', Arial, sans-serif;
-    background-color: #f4f4f4; /* Light gray background */
-    color: #333;              /* Dark text for contrast */
+    background-color: #f4f4f4; /* Fondo gris claro */
+    color: #333;              /* Texto oscuro para contraste */
 }
 
 /* HEADER */
 header {
-    background-color: #3a3a3a; /* Dark gray, same as admin top bar */
-    color: gainsboro;          /* Gainsboro text */
+    background-color: #3a3a3a; /* Gris oscuro, igual que la barra superior del panel */
+    color: gainsboro;
     padding: 20px;
-    border-radius: 0;          /* Keep corners squared or lightly adjust if desired */
-    text-align: center;        /* Centered heading content */
+    text-align: center;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 header h1 {
     margin: 0;
     font-size: 1.8rem;
-    display: inline-block; /* Let the logo and title align horizontally */
+    display: inline-block; 
 }
 
 header h1 img {
@@ -37,10 +36,9 @@ header h1 img {
 
 /* NAVIGATION */
 nav {
-    background-color: #444; /* Slightly lighter than header */
+    background-color: #444;
     padding: 10px;
     text-align: center;
-    border-radius: 0;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -55,7 +53,7 @@ nav a {
 }
 
 nav a:hover {
-    background-color: #3a3a3a; /* same color as header */
+    background-color: #3a3a3a;
 }
 
 /* MAIN CONTENT */
@@ -94,14 +92,51 @@ article time {
     margin-bottom: 5px;
 }
 
+/* CONTACT FORM */
+form.contact-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+form input[type="text"],
+form input[type="email"],
+form input[type="password"],
+form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing:border-box;
+}
+
+form button[type="submit"] {
+    background-color: #3a3a3a;
+    color: #fff;
+    font-weight: bold;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+form button[type="submit"]:hover {
+    background-color: #2a2a2a;
+}
+
 /* FOOTER */
 footer {
     background-color: #3a3a3a;
     color: gainsboro;
     padding: 20px;
     text-align: center;
-    margin-top: 20px;      /* Space above the footer */
-    border-radius: 0;
+    margin-top: 20px; 
 }
 
 footer img {

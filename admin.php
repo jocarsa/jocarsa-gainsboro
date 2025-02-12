@@ -2,14 +2,14 @@
 session_start();
 require_once 'config.php';
 
-// Demo credentials
+// Credenciales de demostración (Cambia según necesites)
 define('ADMIN_USER', 'jocarsa');
 define('ADMIN_PASS', 'jocarsa');
 
-// Connect DB
+// Conexión a la Base de Datos
 $db = new SQLite3($dbPath);
 
-// Ensure all necessary tables exist
+// Asegurar que todas las tablas necesarias existan
 $db->exec("CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT UNIQUE NOT NULL,
@@ -29,7 +29,17 @@ $db->exec("CREATE TABLE IF NOT EXISTS config (
     value TEXT NOT NULL
 )");
 
-// MEDIA TABLE
+// Asegurar tabla de contacto
+$db->exec("CREATE TABLE IF NOT EXISTS contact (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)");
+
+// Tabla para medios
 $db->exec("CREATE TABLE IF NOT EXISTS media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     filename TEXT NOT NULL,
@@ -37,8 +47,9 @@ $db->exec("CREATE TABLE IF NOT EXISTS media (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
+
 // -----------------------------------------------------------
-// HELPER FUNCTIONS
+// FUNCIONES AUXILIARES
 // -----------------------------------------------------------
 function isLoggedIn() {
     return (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true);
@@ -56,7 +67,7 @@ function renderAdmin($content) {
     <html>
     <head>
         <meta charset='utf-8'>
-        <title>Admin Panel</title>
+        <title>Panel de Administración</title>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
 
@@ -160,7 +171,6 @@ function renderAdmin($content) {
                 padding: 20px;
                 text-align: center;
                 margin-top: auto;
-                border-radius: 0;
             }
             .jocarsa-lightslateblue {
                 resize: vertical;
@@ -179,9 +189,6 @@ function renderAdmin($content) {
     </html>";
 }
 
-/**
- * Return array of all media items
- */
 function getAllMedia($db) {
     $items = [];
     $res = $db->query("SELECT * FROM media ORDER BY id DESC");
@@ -191,11 +198,7 @@ function getAllMedia($db) {
     return $items;
 }
 
-/**
- * Return array of all CSS theme names from the /css folder
- */
 function getAvailableThemes() {
-    // Adjust path if admin.php is in the same directory as front or not
     $themeFiles = glob(__DIR__ . '/css/*.css');
     $themes = [];
     if ($themeFiles !== false) {
@@ -206,9 +209,6 @@ function getAvailableThemes() {
     return $themes;
 }
 
-/**
- * Update active theme in config table
- */
 function setActiveTheme($db, $themeName) {
     $st = $db->prepare("UPDATE config SET value = :val WHERE key = 'active_theme'");
     $st->bindValue(':val', $themeName, SQLITE3_TEXT);
@@ -219,14 +219,14 @@ function setActiveTheme($db, $themeName) {
 $action = $_GET['action'] ?? 'login';
 $message = '';
 
-// LOGOUT
+// Cerrar sesión
 if ($action === 'logout') {
     session_destroy();
     header('Location: admin.php');
     exit();
 }
 
-// DO LOGIN
+// Procesar inicio de sesión
 if ($action === 'do_login') {
     $user = $_POST['username'] ?? '';
     $pass = $_POST['password'] ?? '';
@@ -235,12 +235,12 @@ if ($action === 'do_login') {
         header('Location: admin.php?action=dashboard');
         exit();
     } else {
-        $message = "<p class='danger'>Invalid credentials</p>";
+        $message = "<p class='danger'>Credenciales inválidas</p>";
         $action = 'login';
     }
 }
 
-// If not logged in, force login (except for action=login)
+// Si no está logueado, forzar login (excepto acción=login)
 if (!isLoggedIn() && $action !== 'login') {
     header('Location: admin.php?action=login');
     exit();
@@ -252,15 +252,15 @@ switch($action) {
     // LOGIN
     // -----------------------------------------------------------
     case 'login':
-        $html = "<header><h1>Admin Login</h1></header>
+        $html = "<header><h1>Acceso al Panel</h1></header>
                  <nav></nav>
                  $message
                  <form method='post' action='admin.php?action=do_login'>
-                    <label>Username:</label>
+                    <label>Usuario:</label>
                     <input type='text' name='username' required>
-                    <label>Password:</label>
+                    <label>Contraseña:</label>
                     <input type='password' name='password' required>
-                    <button type='submit'>Login</button>
+                    <button type='submit'>Acceder</button>
                  </form>";
         renderAdmin($html);
         break;
@@ -269,38 +269,123 @@ switch($action) {
     // DASHBOARD
     // -----------------------------------------------------------
     case 'dashboard':
-        $html = "<header><h1>Admin Dashboard</h1></header>
+        $html = "<header><h1>Panel de Administración</h1></header>
                  <nav>
-                     <a href='admin.php?action=dashboard'>Home</a>
-                     <a href='admin.php?action=list_pages'>Pages</a>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Themes</a>
-                     <a href='admin.php?action=list_config'>Config</a>
-                     <a href='admin.php?action=list_media'>Media</a>
-                     <a href='admin.php?action=logout'>Logout</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
                  </nav>
-                 <p>Welcome to the admin dashboard.</p>";
+                 <p>Bienvenido al panel de administración.</p>";
         renderAdmin($html);
         break;
 
     // -----------------------------------------------------------
-    // MEDIA: LIST
+    // CONTACTO: LISTAR MENSAJES
+    // -----------------------------------------------------------
+    case 'list_contact':
+        $res = $db->query("SELECT * FROM contact ORDER BY id DESC");
+
+        $html = "<header><h1>Contacto</h1></header>
+                 <nav>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
+                     <a href='admin.php?action=list_blog'>Blog</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
+                 </nav>
+                 <table>
+                   <tr>
+                     <th>ID</th>
+                     <th>Nombre</th>
+                     <th>Correo Electrónico</th>
+                     <th>Asunto</th>
+                     <th>Fecha</th>
+                     <th>Acciones</th>
+                   </tr>";
+
+        while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
+            $html .= "<tr>
+                        <td>{$row['id']}</td>
+                        <td>".htmlspecialchars($row['name'])."</td>
+                        <td>".htmlspecialchars($row['email'])."</td>
+                        <td>".htmlspecialchars($row['subject'])."</td>
+                        <td>".htmlspecialchars($row['created_at'])."</td>
+                        <td>
+                          <a href='admin.php?action=view_contact&id={$row['id']}'>Ver</a>
+                        </td>
+                      </tr>";
+        }
+
+        $html .= "</table>";
+        renderAdmin($html);
+        break;
+
+    // -----------------------------------------------------------
+    // CONTACTO: VER UN MENSAJE
+    // -----------------------------------------------------------
+    case 'view_contact':
+        $id = $_GET['id'] ?? 0;
+        $stmt = $db->prepare("SELECT * FROM contact WHERE id = :id");
+        $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+        $res = $stmt->execute();
+        $messageData = $res->fetchArray(SQLITE3_ASSOC);
+
+        if (!$messageData) {
+            header('Location: admin.php?action=list_contact');
+            exit();
+        }
+
+        $html = "<header><h1>Ver Mensaje</h1></header>
+                 <nav>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
+                     <a href='admin.php?action=list_blog'>Blog</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
+                 </nav>";
+
+        $html .= "<table>
+                    <tr><th>ID</th><td>{$messageData['id']}</td></tr>
+                    <tr><th>Nombre</th><td>".htmlspecialchars($messageData['name'])."</td></tr>
+                    <tr><th>Correo Electrónico</th><td>".htmlspecialchars($messageData['email'])."</td></tr>
+                    <tr><th>Asunto</th><td>".htmlspecialchars($messageData['subject'])."</td></tr>
+                    <tr><th>Mensaje</th><td>".nl2br(htmlspecialchars($messageData['message']))."</td></tr>
+                    <tr><th>Creado</th><td>{$messageData['created_at']}</td></tr>
+                  </table>";
+
+        renderAdmin($html);
+        break;
+
+    // -----------------------------------------------------------
+    // BIBLIOTECA DE MEDIOS: LISTAR
     // -----------------------------------------------------------
     case 'list_media':
         $mediaItems = getAllMedia($db);
-        $html = "<header><h1>Media Library</h1></header>
+        $html = "<header><h1>Biblioteca</h1></header>
                  <nav>
-                     <a href='admin.php?action=dashboard'>Home</a>
-                     <a href='admin.php?action=list_pages'>Pages</a>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Themes</a>
-                     <a href='admin.php?action=list_config'>Config</a>
-                     <a href='admin.php?action=list_media'>Media</a>
-                     <a href='admin.php?action=logout'>Logout</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
                  </nav>
-                 <p><a href='admin.php?action=upload_media'>[+] Upload New Media</a></p>
+                 <p><a href='admin.php?action=upload_media'>[+] Subir Nuevo Archivo</a></p>
                  <table>
-                   <tr><th>ID</th><th>Filename</th><th>Filepath</th><th>Created</th><th>Preview</th><th>Actions</th></tr>";
+                   <tr><th>ID</th><th>Nombre de Archivo</th><th>Ruta</th><th>Fecha</th><th>Vista Previa</th><th>Acciones</th></tr>";
 
         foreach ($mediaItems as $m) {
             $html .= "<tr>
@@ -311,7 +396,7 @@ switch($action) {
                         <td><img src='{$m['filepath']}' alt='' style='max-width:100px;'></td>
                         <td>
                            <a href='admin.php?action=delete_media&id={$m['id']}' 
-                              onclick='return confirm(\"Delete?\");'>Delete</a>
+                              onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
         }
@@ -321,7 +406,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // MEDIA: UPLOAD
+    // BIBLIOTECA DE MEDIOS: SUBIR
     // -----------------------------------------------------------
     case 'upload_media':
         if (isset($_POST['upload'])) {
@@ -333,13 +418,13 @@ switch($action) {
                 if (!is_dir($targetDir)) {
                     mkdir($targetDir, 0777, true);
                 }
-                // Make a unique name
+                // Nombre único
                 $uniqueName = time() . '-' . preg_replace('/[^a-zA-Z0-9._-]/','', $fileName);
                 $targetPath = $targetDir . $uniqueName;
 
                 if (move_uploaded_file($tmpName, $targetPath)) {
-                    // store in DB
-                    $dbFilePath = 'static/' . $uniqueName; // relative path
+                    // Guardar en DB
+                    $dbFilePath = 'static/' . $uniqueName; // ruta relativa
                     $stmt = $db->prepare("INSERT INTO media (filename, filepath) VALUES (:fn, :fp)");
                     $stmt->bindValue(':fn', $fileName, SQLITE3_TEXT);
                     $stmt->bindValue(':fp', $dbFilePath, SQLITE3_TEXT);
@@ -347,36 +432,37 @@ switch($action) {
                     header('Location: admin.php?action=list_media');
                     exit();
                 } else {
-                    $message = "<p class='danger'>Error moving uploaded file.</p>";
+                    $message = "<p class='danger'>Error al mover el archivo subido.</p>";
                 }
             } else {
-                $message = "<p class='danger'>No file selected.</p>";
+                $message = "<p class='danger'>No se ha seleccionado ningún archivo.</p>";
             }
         } else {
             $message = '';
         }
 
-        $html = "<header><h1>Upload Media</h1></header>
+        $html = "<header><h1>Subir Nuevo Archivo</h1></header>
                  <nav>
-                     <a href='admin.php?action=dashboard'>Home</a>
-                     <a href='admin.php?action=list_pages'>Pages</a>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Themes</a>
-                     <a href='admin.php?action=list_config'>Config</a>
-                     <a href='admin.php?action=list_media'>Media</a>
-                     <a href='admin.php?action=logout'>Logout</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  $message
                  <form method='post' enctype='multipart/form-data'>
-                   <label>Select File:</label>
+                   <label>Selecciona el archivo:</label>
                    <input type='file' name='file'>
-                   <button type='submit' name='upload'>Upload</button>
+                   <button type='submit' name='upload'>Subir</button>
                  </form>";
         renderAdmin($html);
         break;
 
     // -----------------------------------------------------------
-    // MEDIA: DELETE
+    // BIBLIOTECA DE MEDIOS: ELIMINAR
     // -----------------------------------------------------------
     case 'delete_media':
         $id = $_GET['id'] ?? null;
@@ -399,32 +485,33 @@ switch($action) {
         exit();
 
     // -----------------------------------------------------------
-    // PAGES: LIST
+    // PÁGINAS: LISTAR
     // -----------------------------------------------------------
     case 'list_pages':
         $res = $db->query("SELECT * FROM pages ORDER BY id DESC");
-        $html = "<header><h1>Pages</h1></header>
+        $html = "<header><h1>Páginas</h1></header>
                  <nav>
-                     <a href='admin.php?action=dashboard'>Home</a>
-                     <a href='admin.php?action=list_pages'>Pages</a>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Themes</a>
-                     <a href='admin.php?action=list_config'>Config</a>
-                     <a href='admin.php?action=list_media'>Media</a>
-                     <a href='admin.php?action=logout'>Logout</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
                  </nav>
-                 <p><a href='admin.php?action=edit_page'>[+] Add New Page</a></p>
+                 <p><a href='admin.php?action=edit_page'>[+] Agregar Nueva Página</a></p>
                  <table>
-                    <tr><th>ID</th><th>Title</th><th>Actions</th></tr>";
+                    <tr><th>ID</th><th>Título</th><th>Acciones</th></tr>";
 
         while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
             $html .= "<tr>
                         <td>{$row['id']}</td>
                         <td>".htmlspecialchars($row['title'])."</td>
                         <td>
-                            <a href='admin.php?action=edit_page&id={$row['id']}'>Edit</a> | 
+                            <a href='admin.php?action=edit_page&id={$row['id']}'>Editar</a> | 
                             <a href='admin.php?action=delete_page&id={$row['id']}'
-                               onclick='return confirm(\"Delete?\");'>Delete</a>
+                               onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
         }
@@ -433,7 +520,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // PAGES: EDIT (Add / Update)
+    // PÁGINAS: EDITAR (Agregar / Actualizar)
     // -----------------------------------------------------------
     case 'edit_page':
         $id = $_GET['id'] ?? null;
@@ -465,31 +552,32 @@ switch($action) {
             exit();
         }
 
-        $html = "<header><h1>" . ($id ? "Edit Page" : "Add Page") . "</h1></header>
+        $html = "<header><h1>" . ($id ? "Editar Página" : "Agregar Página") . "</h1></header>
                  <nav>
-                     <a href='admin.php?action=dashboard'>Home</a>
-                     <a href='admin.php?action=list_pages'>Pages</a>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Themes</a>
-                     <a href='admin.php?action=list_config'>Config</a>
-                     <a href='admin.php?action=list_media'>Media</a>
-                     <a href='admin.php?action=logout'>Logout</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <form method='post'>
-                    <label>Title:</label>
+                    <label>Título:</label>
                     <input type='text' name='title' value='" . htmlspecialchars($pageData['title']) . "' required>
                     
-                    <label>Content:</label>
+                    <label>Contenido:</label>
                     <textarea name='content' class='jocarsa-lightslateblue' rows='10'>"
                     . htmlspecialchars($pageData['content']) . "</textarea>
                     
-                    <button type='submit' name='save_page'>Save</button>
+                    <button type='submit' name='save_page'>Guardar</button>
                  </form>";
         renderAdmin($html);
         break;
 
     // -----------------------------------------------------------
-    // PAGES: DELETE
+    // PÁGINAS: ELIMINAR
     // -----------------------------------------------------------
     case 'delete_page':
         $id = $_GET['id'] ?? null;
@@ -502,23 +590,24 @@ switch($action) {
         exit();
 
     // -----------------------------------------------------------
-    // BLOG: LIST
+    // BLOG: LISTAR
     // -----------------------------------------------------------
     case 'list_blog':
         $res = $db->query("SELECT * FROM blog ORDER BY id DESC");
-        $html = "<header><h1>Blog Entries</h1></header>
+        $html = "<header><h1>Entradas del Blog</h1></header>
                  <nav>
-                     <a href='admin.php?action=dashboard'>Home</a>
-                     <a href='admin.php?action=list_pages'>Pages</a>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Themes</a>
-                     <a href='admin.php?action=list_config'>Config</a>
-                     <a href='admin.php?action=list_media'>Media</a>
-                     <a href='admin.php?action=logout'>Logout</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
                  </nav>
-                 <p><a href='admin.php?action=edit_blog'>[+] Add New Blog Entry</a></p>
+                 <p><a href='admin.php?action=edit_blog'>[+] Agregar Nueva Entrada</a></p>
                  <table>
-                    <tr><th>ID</th><th>Title</th><th>Created</th><th>Actions</th></tr>";
+                    <tr><th>ID</th><th>Título</th><th>Fecha</th><th>Acciones</th></tr>";
 
         while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
             $html .= "<tr>
@@ -526,9 +615,9 @@ switch($action) {
                         <td>" . htmlspecialchars($row['title']) . "</td>
                         <td>" . htmlspecialchars($row['created_at']) . "</td>
                         <td>
-                            <a href='admin.php?action=edit_blog&id={$row['id']}'>Edit</a> |
+                            <a href='admin.php?action=edit_blog&id={$row['id']}'>Editar</a> |
                             <a href='admin.php?action=delete_blog&id={$row['id']}'
-                               onclick='return confirm(\"Delete?\");'>Delete</a>
+                               onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
         }
@@ -537,7 +626,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // BLOG: EDIT
+    // BLOG: EDITAR / AGREGAR
     // -----------------------------------------------------------
     case 'edit_blog':
         $id = $_GET['id'] ?? null;
@@ -569,31 +658,32 @@ switch($action) {
             exit();
         }
 
-        $html = "<header><h1>" . ($id ? "Edit Blog Entry" : "Add Blog Entry") . "</h1></header>
+        $html = "<header><h1>" . ($id ? "Editar Entrada del Blog" : "Agregar Entrada") . "</h1></header>
                  <nav>
-                     <a href='admin.php?action=dashboard'>Home</a>
-                     <a href='admin.php?action=list_pages'>Pages</a>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Themes</a>
-                     <a href='admin.php?action=list_config'>Config</a>
-                     <a href='admin.php?action=list_media'>Media</a>
-                     <a href='admin.php?action=logout'>Logout</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <form method='post'>
-                    <label>Title:</label>
+                    <label>Título:</label>
                     <input type='text' name='title' value='" . htmlspecialchars($blogData['title']) . "' required>
                     
-                    <label>Content:</label>
+                    <label>Contenido:</label>
                     <textarea name='content' class='jocarsa-lightslateblue' rows='10'>"
                     . htmlspecialchars($blogData['content']) . "</textarea>
                     
-                    <button type='submit' name='save_blog'>Save</button>
+                    <button type='submit' name='save_blog'>Guardar</button>
                  </form>";
         renderAdmin($html);
         break;
 
     // -----------------------------------------------------------
-    // BLOG: DELETE
+    // BLOG: ELIMINAR
     // -----------------------------------------------------------
     case 'delete_blog':
         $id = $_GET['id'] ?? null;
@@ -606,42 +696,41 @@ switch($action) {
         exit();
 
     // -----------------------------------------------------------
-    // THEMES: LIST & ACTIVATE
+    // TEMAS: LISTAR Y ACTIVAR
     // -----------------------------------------------------------
     case 'list_themes':
-        // We'll gather from the folder, not from a DB table
         $themes       = getAvailableThemes();
         $activeTheme  = $db->querySingle("SELECT value FROM config WHERE key='active_theme'");
-        $html = "<header><h1>Themes</h1></header>
+        $html = "<header><h1>Temas</h1></header>
                  <nav>
-                     <a href='admin.php?action=dashboard'>Home</a>
-                     <a href='admin.php?action=list_pages'>Pages</a>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Themes</a>
-                     <a href='admin.php?action=list_config'>Config</a>
-                     <a href='admin.php?action=list_media'>Media</a>
-                     <a href='admin.php?action=logout'>Logout</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
                  </nav>";
 
-        // If no .css files are found, show a message
         if (empty($themes)) {
-            $html .= "<p>No themes found in the css folder.</p>";
+            $html .= "<p>No se encontraron temas en la carpeta css.</p>";
             renderAdmin($html);
             break;
         }
 
         $html .= "<table>
-                    <tr><th>Theme Name</th><th>Active</th><th>Action</th></tr>";
+                    <tr><th>Nombre del Tema</th><th>Activo</th><th>Acción</th></tr>";
         foreach ($themes as $tName) {
-            $isActive = ($tName === $activeTheme) ? 'Yes' : 'No';
+            $isActive = ($tName === $activeTheme) ? 'Sí' : 'No';
             $html .= "<tr>
                         <td>$tName</td>
                         <td>$isActive</td>
                         <td>";
             if ($isActive === 'No') {
-                $html .= "<a href='admin.php?action=activate_theme&theme=$tName'>Activate</a>";
+                $html .= "<a href='admin.php?action=activate_theme&theme=$tName'>Activar</a>";
             } else {
-                $html .= "Already Active";
+                $html .= "Ya Está Activo";
             }
             $html .= "</td>
                       </tr>";
@@ -653,17 +742,15 @@ switch($action) {
 
     case 'activate_theme':
         $themeToActivate = $_GET['theme'] ?? '';
-        // Verify themeToActivate is an actual .css file
         $themes = getAvailableThemes();
         if (in_array($themeToActivate, $themes)) {
-            // Update active_theme in config
             setActiveTheme($db, $themeToActivate);
         }
         header('Location: admin.php?action=list_themes');
         exit();
 
     // -----------------------------------------------------------
-    // CONFIG: LIST
+    // CONFIG: LISTAR
     // -----------------------------------------------------------
     case 'list_config':
         if (isset($_POST['save_config'])) {
@@ -673,26 +760,27 @@ switch($action) {
                 $st->bindValue(':key', $k, SQLITE3_TEXT);
                 $st->execute();
             }
-            $message = "<p class='success'>Configuration updated.</p>";
+            $message = "<p class='success'>Configuración actualizada.</p>";
         } else {
             $message = '';
         }
 
         $configs = $db->query("SELECT * FROM config ORDER BY id ASC");
-        $html = "<header><h1>Site Config</h1></header>
+        $html = "<header><h1>Configuración del Sitio</h1></header>
                  <nav>
-                     <a href='admin.php?action=dashboard'>Home</a>
-                     <a href='admin.php?action=list_pages'>Pages</a>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Themes</a>
-                     <a href='admin.php?action=list_config'>Config</a>
-                     <a href='admin.php?action=list_media'>Media</a>
-                     <a href='admin.php?action=logout'>Logout</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  $message
                  <form method='post'>
                  <table>
-                 <tr><th>Key</th><th>Value</th></tr>";
+                 <tr><th>Clave</th><th>Valor</th></tr>";
 
         while ($row = $configs->fetchArray(SQLITE3_ASSOC)) {
             $key = htmlspecialchars($row['key']);
@@ -703,7 +791,7 @@ switch($action) {
                       </tr>";
         }
         $html .= "</table>
-                  <button type='submit' name='save_config'>Save</button>
+                  <button type='submit' name='save_config'>Guardar</button>
                   </form>";
         renderAdmin($html);
         break;
@@ -720,6 +808,6 @@ switch($action) {
         exit();
 }
 ?>
-<link rel="stylesheet" href="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa | lightslateblue.css">
-<script src="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa | lightslateblue.js"></script>
+<link rel="stylesheet" href="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa%20%7C%20lightslateblue.css">
+<script src="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa%20%7C%20lightslateblue.js"></script>
 

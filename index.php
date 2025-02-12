@@ -25,6 +25,16 @@ $db->exec("CREATE TABLE IF NOT EXISTS config (
     value TEXT NOT NULL
 )");
 
+// NEW: Create a table for contact messages
+$db->exec("CREATE TABLE IF NOT EXISTS contact (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)");
+
 // Insert default config values if they don't exist
 $db->exec("
     INSERT OR IGNORE INTO config (key, value) VALUES
@@ -54,16 +64,12 @@ $metaAuthor      = htmlspecialchars($config['meta_author'] ?? 'Default Author');
 // ---------------------------------------------------------------------
 // Dynamically detect all CSS files in the `css` folder
 // ---------------------------------------------------------------------
-/**
- * If your file is in the same folder as `css`, use ./css/*.css
- * If your structure is different, adjust accordingly. 
- */
 $themeFiles = glob(__DIR__ . '/css/*.css'); 
 $availableThemes = [];
 
 if ($themeFiles !== false) {
     foreach ($themeFiles as $filePath) {
-        // Extract the filename without extension, e.g. "gainsboro" from "gainsboro.css"
+        // Extract the filename without extension
         $filename = pathinfo($filePath, PATHINFO_FILENAME);
         $availableThemes[] = $filename;
     }
@@ -71,8 +77,6 @@ if ($themeFiles !== false) {
 
 // Determine the active theme from the database config
 $activeTheme = $config['active_theme'] ?? 'gainsboro';
-
-// If the stored active theme doesn't exist in the available themes, use the first found
 if (!in_array($activeTheme, $availableThemes) && count($availableThemes) > 0) {
     $activeTheme = $availableThemes[0];
 }
@@ -125,11 +129,16 @@ function render(
 // Build the menu
 // ---------------------------------------------------------------------
 $menu = "<a href='?page=inicio'>Inicio</a> | <a href='?page=blog'>Blog</a>";
+
+// Add dynamic pages to the menu
 $result = $db->query("SELECT title FROM pages ORDER BY title ASC");
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $menu .= " | <a href='?page=" . urlencode($row['title']) . "'>" 
           . htmlspecialchars($row['title']) . "</a>";
 }
+
+// NEW: Add a static link to "Contacto" in the main menu
+$menu .= " | <a href='?page=contacto'>Contacto</a>";
 
 // ---------------------------------------------------------------------
 // Handle requests
@@ -144,11 +153,58 @@ if ($page === 'blog') {
         $blogContent .= "<article>\n";
         $blogContent .= "    <h3>" . htmlspecialchars($row['title']) . "</h3>\n";
         $blogContent .= "    <time>" . htmlspecialchars($row['created_at']) . "</time>\n";
-        // Directly output the content (contains HTML)
-        $blogContent .= "    <div>" . $row['content'] . "</div>\n";
+        $blogContent .= "    <div>" . $row['content'] . "</div>\n"; // HTML
         $blogContent .= "</article>\n<hr>\n";
     }
     render($blogContent, $menu, $activeTheme, $title, $logo, $metaDescription, $metaTags, $metaAuthor);
+
+} elseif ($page === 'contacto') {
+    // NEW: Contact form page
+    $contactContent = "<h2>Contacto</h2>";
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Collect and sanitize form data
+        $name    = trim($_POST['name'] ?? '');
+        $email   = trim($_POST['email'] ?? '');
+        $subject = trim($_POST['subject'] ?? '');
+        $message = trim($_POST['message'] ?? '');
+
+        if ($name && $email && $subject && $message) {
+            // Insert into `contact` table
+            $stmt = $db->prepare("INSERT INTO contact (name, email, subject, message) 
+                                  VALUES (:n, :e, :s, :m)");
+            $stmt->bindValue(':n', $name, SQLITE3_TEXT);
+            $stmt->bindValue(':e', $email, SQLITE3_TEXT);
+            $stmt->bindValue(':s', $subject, SQLITE3_TEXT);
+            $stmt->bindValue(':m', $message, SQLITE3_TEXT);
+            $stmt->execute();
+
+            $contactContent .= "<p>¡Gracias por tu mensaje, $name! Te responderemos pronto.</p>";
+        } else {
+            $contactContent .= "<p style='color:red;'>Por favor, rellena todos los campos.</p>";
+        }
+    }
+
+    // Display form
+    $contactContent .= "
+    <form method='post'>
+        <label for='name'>Nombre Completo:</label><br>
+        <input type='text' id='name' name='name' required><br><br>
+
+        <label for='email'>Correo Electrónico:</label><br>
+        <input type='email' id='email' name='email' required><br><br>
+
+        <label for='subject'>Asunto:</label><br>
+        <input type='text' id='subject' name='subject' required><br><br>
+
+        <label for='message'>Mensaje:</label><br>
+        <textarea id='message' name='message' rows='5' required></textarea><br><br>
+
+        <button type='submit'>Enviar</button>
+    </form>";
+
+    render($contactContent, $menu, $activeTheme, $title, $logo, $metaDescription, $metaTags, $metaAuthor);
+
 } else {
     // Display a specific page
     $stmt = $db->prepare("SELECT content FROM pages WHERE title = :title");
