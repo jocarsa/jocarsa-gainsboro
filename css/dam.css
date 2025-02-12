@@ -1,0 +1,207 @@
+/* ========================================================
+   gainsboro.css - Estilo profesional y atractivo para jocarsa | gainsboro
+   ======================================================== */
+
+/* ---------- RESET y configuración base ---------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f2f2f2;
+  color: #333;
+  line-height: 1.6;
+  padding: 20px;
+}
+
+/* ---------- Contenedores principales ---------- */
+/* Se aplicará tanto a un <main> (si lo usas) como a #contenedor */
+main,
+#contenedor {
+  background: #fff;
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ---------- Encabezado ---------- */
+h1 {
+  font-size: 2.5em;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* ---------- Navegación ---------- */
+nav {
+  background: #fff;
+  padding: 15px 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+nav a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 600;
+  margin: 0 12px;
+  transition: color 0.3s ease;
+}
+
+nav a:hover {
+  color: #007BFF;
+}
+
+/* ---------- Estilos generales para contenidos en <main> o #contenedor ---------- */
+/* Esto se aplica a cualquier etiqueta interna */
+main h1,
+main h2,
+main h3,
+main h4,
+main h5,
+main h6,
+#contenedor h1,
+#contenedor h2,
+#contenedor h3,
+#contenedor h4,
+#contenedor h5,
+#contenedor h6 {
+  margin-bottom: 15px;
+  line-height: 1.2;
+  color: #222;
+}
+
+main p,
+main ul,
+main ol,
+main blockquote,
+main pre,
+main table,
+main iframe,
+#contenedor p,
+#contenedor ul,
+#contenedor ol,
+#contenedor blockquote,
+#contenedor pre,
+#contenedor table,
+#contenedor iframe {
+  margin-bottom: 20px;
+}
+
+/* ---------- Párrafos ---------- */
+p {
+  font-size: 1rem;
+}
+
+/* ---------- Listas ---------- */
+ul,
+ol {
+  padding-left: 40px;
+}
+
+/* ---------- Tablas ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+table th,
+table td {
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  text-align: left;
+}
+
+table tr:nth-child(even) {
+  background-color: #f8f8f8;
+}
+
+/* ---------- Iframes (por ejemplo, para videos de YouTube) ---------- */
+iframe {
+  width: 100%;
+  /* Se mantiene la relación de aspecto 16:9; en navegadores que soporten aspect-ratio */
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: 8px;
+}
+
+/* ---------- Rejillas o grids ---------- */
+.grid.block-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  background-color: #fafafa;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+}
+
+/* ---------- Bloques personalizados (clase jocarsa-block) ---------- */
+.jocarsa-block {
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+}
+
+/* ---------- Enlaces ---------- */
+a {
+  color: #007BFF;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Imágenes ---------- */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ---------- Footer ---------- */
+footer {
+  background: #fff;
+  text-align: center;
+  padding: 20px;
+  margin-top: 40px;
+  border-top: 1px solid #e0e0e0;
+  color: #666;
+  font-size: 0.9rem;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+}
+
+footer img {
+  vertical-align: middle;
+  height: 24px;
+  margin: 0 8px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+  nav {
+    padding: 10px;
+  }
+  main,
+  #contenedor {
+    padding: 20px;
+  }
+  h1 {
+    font-size: 2em;
+  }
+}
+
