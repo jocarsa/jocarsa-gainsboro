@@ -109,7 +109,9 @@ function render(
     echo "    <body>\n";
     echo "        <header>\n";
     echo "            <h1>\n";
-    echo "                <img src=\"$logo\" alt=\"Site Logo\"> $title\n";
+    echo "                <a href='?page=inicio'>";
+    echo "                		<img src=\"$logo\" alt=\"Site Logo\"> $title\n";
+    echo "                </a>";
     echo "            </h1>\n";
     echo "        </header>\n";
     echo "        <nav>\n";
@@ -128,8 +130,8 @@ function render(
 // ---------------------------------------------------------------------
 // Build the menu
 // ---------------------------------------------------------------------
-$menu = "<a href='?page=inicio'>Inicio</a> | <a href='?page=blog'>Blog</a>";
-
+//$menu = "<a href='?page=inicio'>Inicio</a> | <a href='?page=blog'>Blog</a>";
+$menu = "<a href='?page=blog'>Blog</a>";
 // Add dynamic pages to the menu
 $result = $db->query("SELECT title FROM pages ORDER BY title ASC");
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
