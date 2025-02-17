@@ -5,7 +5,6 @@ require_once 'config.php';
 // Initialize SQLite3 database
 $db = new SQLite3($dbPath);
 
-// Create necessary tables if they don't exist
 $db->exec("CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT UNIQUE NOT NULL,
@@ -25,7 +24,6 @@ $db->exec("CREATE TABLE IF NOT EXISTS config (
     value TEXT NOT NULL
 )");
 
-// NEW: Create a table for contact messages
 $db->exec("CREATE TABLE IF NOT EXISTS contact (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -44,7 +42,7 @@ $db->exec("
         ('meta_tags', 'default, tags'),
         ('meta_author', 'Jose Vicente Carratala'),
         ('active_theme', 'gainsboro'),
-        ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg')  // New entry for footer image
+        ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg')
 ");
 
 // ---------------------------------------------------------------------
