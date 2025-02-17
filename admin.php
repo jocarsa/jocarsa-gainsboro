@@ -47,6 +47,17 @@ $db->exec("CREATE TABLE IF NOT EXISTS media (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
+// Insert default config values if they don't exist
+$db->exec("
+    INSERT OR IGNORE INTO config (key, value) VALUES
+        ('title', 'jocarsa | gainsboro'),
+        ('logo', 'https://jocarsa.com/static/logo/jocarsa%20%7C%20gainsboro.svg'),
+        ('meta_description', 'Default meta description'),
+        ('meta_tags', 'default, tags'),
+        ('meta_author', 'Jose Vicente Carratala'),
+        ('active_theme', 'gainsboro'),
+        ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg')  // New entry for footer image
+");
 
 // -----------------------------------------------------------
 // FUNCIONES AUXILIARES
@@ -395,7 +406,7 @@ switch($action) {
                         <td>".htmlspecialchars($m['created_at'])."</td>
                         <td><img src='{$m['filepath']}' alt='' style='max-width:100px;'></td>
                         <td>
-                           <a href='admin.php?action=delete_media&id={$m['id']}' 
+                           <a href='admin.php?action=delete_media&id={$m['id']}'
                               onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
@@ -509,7 +520,7 @@ switch($action) {
                         <td>{$row['id']}</td>
                         <td>".htmlspecialchars($row['title'])."</td>
                         <td>
-                            <a href='admin.php?action=edit_page&id={$row['id']}'>Editar</a> | 
+                            <a href='admin.php?action=edit_page&id={$row['id']}'>Editar</a> |
                             <a href='admin.php?action=delete_page&id={$row['id']}'
                                onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
@@ -566,11 +577,11 @@ switch($action) {
                  <form method='post'>
                     <label>Título:</label>
                     <input type='text' name='title' value='" . htmlspecialchars($pageData['title']) . "' required>
-                    
+
                     <label>Contenido:</label>
                     <textarea name='content' class='jocarsa-lightslateblue' rows='10'>"
                     . htmlspecialchars($pageData['content']) . "</textarea>
-                    
+
                     <button type='submit' name='save_page'>Guardar</button>
                  </form>";
         renderAdmin($html);
@@ -672,11 +683,11 @@ switch($action) {
                  <form method='post'>
                     <label>Título:</label>
                     <input type='text' name='title' value='" . htmlspecialchars($blogData['title']) . "' required>
-                    
+
                     <label>Contenido:</label>
                     <textarea name='content' class='jocarsa-lightslateblue' rows='10'>"
                     . htmlspecialchars($blogData['content']) . "</textarea>
-                    
+
                     <button type='submit' name='save_blog'>Guardar</button>
                  </form>";
         renderAdmin($html);

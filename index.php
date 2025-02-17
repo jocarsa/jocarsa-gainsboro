@@ -43,7 +43,8 @@ $db->exec("
         ('meta_description', 'Default meta description'),
         ('meta_tags', 'default, tags'),
         ('meta_author', 'Jose Vicente Carratala'),
-        ('active_theme', 'gainsboro')
+        ('active_theme', 'gainsboro'),
+        ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg')  // New entry for footer image
 ");
 
 // ---------------------------------------------------------------------
@@ -57,14 +58,15 @@ while ($row = $configResult->fetchArray(SQLITE3_ASSOC)) {
 
 $title           = htmlspecialchars($config['title'] ?? 'Default Title');
 $logo            = htmlspecialchars($config['logo'] ?? 'default-logo.svg');
+$footerImage     = htmlspecialchars($config['footer_image'] ?? 'default-footer-logo.svg');  // New footer image
 $metaDescription = htmlspecialchars($config['meta_description'] ?? 'Default description');
 $metaTags        = htmlspecialchars($config['meta_tags'] ?? 'default, tags');
 $metaAuthor      = htmlspecialchars($config['meta_author'] ?? 'Default Author');
 
 // ---------------------------------------------------------------------
-// Dynamically detect all CSS files in the `css` folder
+// Dynamically detect all CSS files in the css folder
 // ---------------------------------------------------------------------
-$themeFiles = glob(__DIR__ . '/css/*.css'); 
+$themeFiles = glob(__DIR__ . '/css/*.css');
 $availableThemes = [];
 
 if ($themeFiles !== false) {
@@ -90,6 +92,7 @@ function render(
     $theme,
     $title,
     $logo,
+    $footerImage,  // Pass footer image
     $metaDescription,
     $metaTags,
     $metaAuthor
@@ -121,7 +124,7 @@ function render(
     echo "            $content\n";
     echo "        </main>\n";
     echo "        <footer>\n";
-    echo "            &copy; " . date('Y') . " <img src=\"$logo\" alt=\"Site Logo\"> $title\n";
+    echo "            &copy; " . date('Y') . " <img src=\"$footerImage\" alt=\"Footer Logo\"> $title\n";  // Use footer image
     echo "        </footer>\n";
     echo "    </body>\n";
     echo "</html>\n";
@@ -135,7 +138,7 @@ $menu = "<a href='?page=blog'>Blog</a>";
 // Add dynamic pages to the menu
 $result = $db->query("SELECT title FROM pages ORDER BY title ASC");
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-    $menu .= " | <a href='?page=" . urlencode($row['title']) . "'>" 
+    $menu .= " | <a href='?page=" . urlencode($row['title']) . "'>"
           . htmlspecialchars($row['title']) . "</a>";
 }
 
@@ -158,7 +161,7 @@ if ($page === 'blog') {
         $blogContent .= "    <div>" . $row['content'] . "</div>\n"; // HTML
         $blogContent .= "</article>\n<hr>\n";
     }
-    render($blogContent, $menu, $activeTheme, $title, $logo, $metaDescription, $metaTags, $metaAuthor);
+    render($blogContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor);
 
 } elseif ($page === 'contacto') {
     // NEW: Contact form page
@@ -172,8 +175,8 @@ if ($page === 'blog') {
         $message = trim($_POST['message'] ?? '');
 
         if ($name && $email && $subject && $message) {
-            // Insert into `contact` table
-            $stmt = $db->prepare("INSERT INTO contact (name, email, subject, message) 
+            // Insert into contact table
+            $stmt = $db->prepare("INSERT INTO contact (name, email, subject, message)
                                   VALUES (:n, :e, :s, :m)");
             $stmt->bindValue(':n', $name, SQLITE3_TEXT);
             $stmt->bindValue(':e', $email, SQLITE3_TEXT);
@@ -205,7 +208,7 @@ if ($page === 'blog') {
         <button type='submit'>Enviar</button>
     </form>";
 
-    render($contactContent, $menu, $activeTheme, $title, $logo, $metaDescription, $metaTags, $metaAuthor);
+    render($contactContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor);
 
 } else {
     // Display a specific page
@@ -217,9 +220,9 @@ if ($page === 'blog') {
     if ($row) {
         $pageContent = "<h2>" . htmlspecialchars($page) . "</h2>\n"
                      . "<div>" . $row['content'] . "</div>\n";
-        render($pageContent, $menu, $activeTheme, $title, $logo, $metaDescription, $metaTags, $metaAuthor);
+        render($pageContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor);
     } else {
-        render("<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $metaDescription, $metaTags, $metaAuthor);
+        render("<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor);
     }
 }
 ?>
