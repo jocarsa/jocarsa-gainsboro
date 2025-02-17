@@ -9,7 +9,6 @@ define('ADMIN_PASS', 'jocarsa');
 // Conexión a la Base de Datos
 $db = new SQLite3($dbPath);
 
-// Asegurar que todas las tablas necesarias existan
 $db->exec("CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT UNIQUE NOT NULL,
@@ -29,7 +28,6 @@ $db->exec("CREATE TABLE IF NOT EXISTS config (
     value TEXT NOT NULL
 )");
 
-// Asegurar tabla de contacto
 $db->exec("CREATE TABLE IF NOT EXISTS contact (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -39,7 +37,6 @@ $db->exec("CREATE TABLE IF NOT EXISTS contact (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
-// Tabla para medios
 $db->exec("CREATE TABLE IF NOT EXISTS media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     filename TEXT NOT NULL,
@@ -56,8 +53,9 @@ $db->exec("
         ('meta_tags', 'default, tags'),
         ('meta_author', 'Jose Vicente Carratala'),
         ('active_theme', 'gainsboro'),
-        ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg')  // New entry for footer image
+        ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg')
 ");
+
 
 // -----------------------------------------------------------
 // FUNCIONES AUXILIARES
