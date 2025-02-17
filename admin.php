@@ -56,7 +56,6 @@ $db->exec("
         ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg')
 ");
 
-
 // -----------------------------------------------------------
 // FUNCIONES AUXILIARES
 // -----------------------------------------------------------
@@ -284,6 +283,7 @@ switch($action) {
                      <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
                      <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
@@ -305,6 +305,7 @@ switch($action) {
                      <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
                      <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
@@ -358,6 +359,7 @@ switch($action) {
                      <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
                      <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
@@ -387,6 +389,7 @@ switch($action) {
                      <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
                      <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
@@ -456,6 +459,7 @@ switch($action) {
                      <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
                      <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
@@ -504,6 +508,7 @@ switch($action) {
                      <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
                      <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
@@ -567,6 +572,7 @@ switch($action) {
                      <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
                      <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
@@ -609,6 +615,7 @@ switch($action) {
                      <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
                      <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
@@ -673,6 +680,7 @@ switch($action) {
                      <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
                      <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
@@ -716,6 +724,7 @@ switch($action) {
                      <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
                      <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
@@ -759,6 +768,44 @@ switch($action) {
         exit();
 
     // -----------------------------------------------------------
+    // TEMAS: EDITAR
+    // -----------------------------------------------------------
+    case 'edit_theme':
+        $themeName = $db->querySingle("SELECT value FROM config WHERE key='active_theme'");
+        $themePath = __DIR__ . '/css/' . $themeName . '.css';
+
+        if (isset($_POST['save_theme'])) {
+            $cssContent = $_POST['css_content'] ?? '';
+            file_put_contents($themePath, $cssContent);
+            $message = "<p class='success'>Tema actualizado correctamente.</p>";
+        } else {
+            $message = '';
+        }
+
+        $cssContent = file_get_contents($themePath);
+
+        $html = "<header><h1>Editar Tema: $themeName</h1></header>
+                 <nav>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
+                     <a href='admin.php?action=list_blog'>Blog</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=logout'>Salir</a>
+                 </nav>
+                 $message
+                 <form method='post'>
+                    <label>Contenido CSS:</label>
+                    <textarea name='css_content' class='jocarsa-lightslateblue' rows='20'>" . htmlspecialchars($cssContent) . "</textarea>
+                    <button type='submit' name='save_theme'>Guardar</button>
+                 </form>";
+        renderAdmin($html);
+        break;
+
+    // -----------------------------------------------------------
     // CONFIG: LISTAR
     // -----------------------------------------------------------
     case 'list_config':
@@ -781,6 +828,7 @@ switch($action) {
                      <a href='admin.php?action=list_pages'>Páginas</a>
                      <a href='admin.php?action=list_blog'>Blog</a>
                      <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
