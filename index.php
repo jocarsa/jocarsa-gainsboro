@@ -42,7 +42,8 @@ $db->exec("
         ('meta_tags', 'default, tags'),
         ('meta_author', 'Jose Vicente Carratala'),
         ('active_theme', 'gainsboro'),
-        ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg')
+        ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg'),
+        ('analytics_user', 'defaultUser')
 ");
 
 // ---------------------------------------------------------------------
@@ -56,10 +57,11 @@ while ($row = $configResult->fetchArray(SQLITE3_ASSOC)) {
 
 $title           = htmlspecialchars($config['title'] ?? 'Default Title');
 $logo            = htmlspecialchars($config['logo'] ?? 'default-logo.svg');
-$footerImage     = htmlspecialchars($config['footer_image'] ?? 'default-footer-logo.svg');  // New footer image
+$footerImage     = htmlspecialchars($config['footer_image'] ?? 'default-footer-logo.svg');
 $metaDescription = htmlspecialchars($config['meta_description'] ?? 'Default description');
 $metaTags        = htmlspecialchars($config['meta_tags'] ?? 'default, tags');
 $metaAuthor      = htmlspecialchars($config['meta_author'] ?? 'Default Author');
+$analyticsUser   = htmlspecialchars($config['analytics_user'] ?? 'defaultUser');
 
 // ---------------------------------------------------------------------
 // Dynamically detect all CSS files in the css folder
@@ -82,7 +84,7 @@ if (!in_array($activeTheme, $availableThemes) && count($availableThemes) > 0) {
 }
 
 // ---------------------------------------------------------------------
-// Helper function to render the final HTML
+// Helper function to render the final HTML, now with analyticsUser
 // ---------------------------------------------------------------------
 function render(
     $content,
@@ -90,10 +92,11 @@ function render(
     $theme,
     $title,
     $logo,
-    $footerImage,  // Pass footer image
+    $footerImage,
     $metaDescription,
     $metaTags,
-    $metaAuthor
+    $metaAuthor,
+    $analyticsUser
 ) {
     echo "<!DOCTYPE html>\n";
     echo "<html lang=\"en\">\n";
@@ -111,7 +114,7 @@ function render(
     echo "        <header>\n";
     echo "            <h1>\n";
     echo "                <a href='?page=inicio'>";
-    echo "                		<img src=\"$logo\" alt=\"Site Logo\"> $title\n";
+    echo "                    <img src=\"$logo\" alt=\"Site Logo\"> $title\n";
     echo "                </a>";
     echo "            </h1>\n";
     echo "        </header>\n";
@@ -122,8 +125,10 @@ function render(
     echo "            $content\n";
     echo "        </main>\n";
     echo "        <footer>\n";
-    echo "            &copy; " . date('Y') . " <img src=\"$footerImage\" alt=\"Footer Logo\"> $title\n";  // Use footer image
+    echo "            &copy; " . date('Y') . " <img src=\"$footerImage\" alt=\"Footer Logo\"> $title\n";
     echo "        </footer>\n";
+    // Insert the analytics script with the user parameter from configuration
+    echo "        <script src=\"https://ghostwhite.jocarsa.com/analytics.js?user=$analyticsUser\"></script>\n";
     echo "    </body>\n";
     echo "</html>\n";
 }
@@ -131,16 +136,14 @@ function render(
 // ---------------------------------------------------------------------
 // Build the menu
 // ---------------------------------------------------------------------
-//$menu = "<a href='?page=inicio'>Inicio</a> | <a href='?page=blog'>Blog</a>";
 $menu = "<a href='?page=blog'>Blog</a>";
 // Add dynamic pages to the menu
 $result = $db->query("SELECT title FROM pages ORDER BY title ASC");
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-    $menu .= " | <a href='?page=" . urlencode($row['title']) . "'>"
-          . htmlspecialchars($row['title']) . "</a>";
+    $menu .= " | <a href='?page=" . urlencode($row['title']) . "'>" . htmlspecialchars($row['title']) . "</a>";
 }
 
-// NEW: Add a static link to "Contacto" in the main menu
+// Add a static link to "Contacto" in the main menu
 $menu .= " | <a href='?page=contacto'>Contacto</a>";
 
 // ---------------------------------------------------------------------
@@ -156,13 +159,13 @@ if ($page === 'blog') {
         $blogContent .= "<article>\n";
         $blogContent .= "    <h3>" . htmlspecialchars($row['title']) . "</h3>\n";
         $blogContent .= "    <time>" . htmlspecialchars($row['created_at']) . "</time>\n";
-        $blogContent .= "    <div>" . $row['content'] . "</div>\n"; // HTML
+        $blogContent .= "    <div>" . $row['content'] . "</div>\n"; // HTML allowed
         $blogContent .= "</article>\n<hr>\n";
     }
-    render($blogContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor);
+    render($blogContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
 
 } elseif ($page === 'contacto') {
-    // NEW: Contact form page
+    // Contact form page
     $contactContent = "<h2>Contacto</h2>";
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -206,7 +209,7 @@ if ($page === 'blog') {
         <button type='submit'>Enviar</button>
     </form>";
 
-    render($contactContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor);
+    render($contactContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
 
 } else {
     // Display a specific page
@@ -216,11 +219,10 @@ if ($page === 'blog') {
     $row = $result->fetchArray(SQLITE3_ASSOC);
 
     if ($row) {
-        $pageContent = "<h2>" . htmlspecialchars($page) . "</h2>\n"
-                     . "<div>" . $row['content'] . "</div>\n";
-        render($pageContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor);
+        $pageContent = "<h2>" . htmlspecialchars($page) . "</h2>\n" . "<div>" . $row['content'] . "</div>\n";
+        render($pageContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
     } else {
-        render("<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor);
+        render("<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
     }
 }
 ?>

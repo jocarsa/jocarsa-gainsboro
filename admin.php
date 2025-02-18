@@ -44,7 +44,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS media (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
-// Insert default config values if they don't exist
+// Insert default config values if they don't exist, including the new analytics_user key
 $db->exec("
     INSERT OR IGNORE INTO config (key, value) VALUES
         ('title', 'jocarsa | gainsboro'),
@@ -53,7 +53,8 @@ $db->exec("
         ('meta_tags', 'default, tags'),
         ('meta_author', 'Jose Vicente Carratala'),
         ('active_theme', 'gainsboro'),
-        ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg')
+        ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg'),
+        ('analytics_user', 'defaultUser')
 ");
 
 // -----------------------------------------------------------
@@ -72,129 +73,124 @@ function requireLogin() {
 
 function renderAdmin($content) {
     echo "<!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset='utf-8'>
-        <title>Panel de Administración</title>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
-
-            body, h1, h2, p, a, table, th, td, label, textarea, input, select {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-                font-family: 'Ubuntu', Arial, sans-serif;
-            }
-            body {
-                background-color: #f4f4f4;
-                display: flex;
-                flex-direction: column;
-                min-height: 100vh;
-            }
-            .admin-container {
-                width: 90%;
-                max-width: 1000px;
-                margin: 20px auto;
-                background: #ffffff;
-                padding: 20px;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                border-radius: 8px;
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-            }
-            header h1 {
-                background-color: #3a3a3a;
-                color: gainsboro;
-                padding: 20px;
-                text-align: center;
-                font-size: 24px;
-                border-radius: 8px 8px 0 0;
-                margin-bottom: 0;
-            }
-            nav {
-                background-color: #444;
-                padding: 10px;
-                text-align: center;
-                margin-bottom: 20px;
-                border-radius: 0 0 8px 8px;
-            }
-            nav a {
-                color: white;
-                text-decoration: none;
-                font-weight: bold;
-                margin: 0 10px;
-                padding: 8px 15px;
-                border-radius: 4px;
-                transition: background-color 0.3s ease;
-            }
-            nav a:hover {
-                background-color: #3a3a3a;
-            }
-            label {
-                display: block;
-                margin-top: 15px;
-                font-weight: bold;
-            }
-            input[type='text'], input[type='password'], textarea, select, input[type='file'] {
-                width: 100%;
-                padding: 8px;
-                margin-top: 5px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 20px;
-            }
-            table, th, td {
-                border: 1px solid #ddd;
-            }
-            th, td {
-                padding: 8px;
-                text-align: left;
-            }
-            button {
-                background-color: #3a3a3a;
-                color: gainsboro;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 4px;
-                cursor: pointer;
-                margin-top: 15px;
-            }
-            button:hover {
-                background-color: #2a2a2a;
-            }
-            .danger {
-                color: red;
-            }
-            .success {
-                color: green;
-            }
-            footer {
-                background-color: #3a3a3a;
-                color: gainsboro;
-                padding: 20px;
-                text-align: center;
-                margin-top: auto;
-            }
-            .jocarsa-lightslateblue {
-                resize: vertical;
-                min-height: 200px;
-            }
-        </style>
-    </head>
-    <body>
-    <div class='admin-container'>
-        $content
-    </div>
-    <footer>
-        &copy; " . date('Y') . " jocarsa Admin Panel
-    </footer>
-    </body>
-    </html>";
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>Panel de Administración</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
+        body, h1, h2, p, a, table, th, td, label, textarea, input, select {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Ubuntu', Arial, sans-serif;
+        }
+        body {
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .admin-container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        header h1 {
+            background-color: #3a3a3a;
+            color: gainsboro;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 0;
+        }
+        nav {
+            background-color: #444;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 0 0 8px 8px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 0 10px;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        nav a:hover {
+            background-color: #3a3a3a;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        input[type='text'], input[type='password'], textarea, select, input[type='file'] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        button {
+            background-color: #3a3a3a;
+            color: gainsboro;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover {
+            background-color: #2a2a2a;
+        }
+        .danger { color: red; }
+        .success { color: green; }
+        footer {
+            background-color: #3a3a3a;
+            color: gainsboro;
+            padding: 20px;
+            text-align: center;
+            margin-top: auto;
+        }
+        .jocarsa-lightslateblue {
+            resize: vertical;
+            min-height: 200px;
+        }
+    </style>
+</head>
+<body>
+<div class='admin-container'>
+    $content
+</div>
+<footer>
+    &copy; " . date('Y') . " jocarsa Admin Panel
+</footer>
+</body>
+</html>";
 }
 
 function getAllMedia($db) {
@@ -223,7 +219,9 @@ function setActiveTheme($db, $themeName) {
     $st->execute();
 }
 
+// -----------------------------------------------------------
 // Routing
+// -----------------------------------------------------------
 $action = $_GET['action'] ?? 'login';
 $message = '';
 
@@ -298,7 +296,6 @@ switch($action) {
     // -----------------------------------------------------------
     case 'list_contact':
         $res = $db->query("SELECT * FROM contact ORDER BY id DESC");
-
         $html = "<header><h1>Contacto</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Inicio</a>
@@ -320,20 +317,16 @@ switch($action) {
                      <th>Fecha</th>
                      <th>Acciones</th>
                    </tr>";
-
         while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
             $html .= "<tr>
                         <td>{$row['id']}</td>
-                        <td>".htmlspecialchars($row['name'])."</td>
-                        <td>".htmlspecialchars($row['email'])."</td>
-                        <td>".htmlspecialchars($row['subject'])."</td>
-                        <td>".htmlspecialchars($row['created_at'])."</td>
-                        <td>
-                          <a href='admin.php?action=view_contact&id={$row['id']}'>Ver</a>
-                        </td>
+                        <td>" . htmlspecialchars($row['name']) . "</td>
+                        <td>" . htmlspecialchars($row['email']) . "</td>
+                        <td>" . htmlspecialchars($row['subject']) . "</td>
+                        <td>" . htmlspecialchars($row['created_at']) . "</td>
+                        <td><a href='admin.php?action=view_contact&id={$row['id']}'>Ver</a></td>
                       </tr>";
         }
-
         $html .= "</table>";
         renderAdmin($html);
         break;
@@ -347,12 +340,10 @@ switch($action) {
         $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
         $res = $stmt->execute();
         $messageData = $res->fetchArray(SQLITE3_ASSOC);
-
         if (!$messageData) {
             header('Location: admin.php?action=list_contact');
             exit();
         }
-
         $html = "<header><h1>Ver Mensaje</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Inicio</a>
@@ -364,17 +355,15 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=logout'>Salir</a>
-                 </nav>";
-
-        $html .= "<table>
+                 </nav>
+                 <table>
                     <tr><th>ID</th><td>{$messageData['id']}</td></tr>
-                    <tr><th>Nombre</th><td>".htmlspecialchars($messageData['name'])."</td></tr>
-                    <tr><th>Correo Electrónico</th><td>".htmlspecialchars($messageData['email'])."</td></tr>
-                    <tr><th>Asunto</th><td>".htmlspecialchars($messageData['subject'])."</td></tr>
-                    <tr><th>Mensaje</th><td>".nl2br(htmlspecialchars($messageData['message']))."</td></tr>
+                    <tr><th>Nombre</th><td>" . htmlspecialchars($messageData['name']) . "</td></tr>
+                    <tr><th>Correo Electrónico</th><td>" . htmlspecialchars($messageData['email']) . "</td></tr>
+                    <tr><th>Asunto</th><td>" . htmlspecialchars($messageData['subject']) . "</td></tr>
+                    <tr><th>Mensaje</th><td>" . nl2br(htmlspecialchars($messageData['message'])) . "</td></tr>
                     <tr><th>Creado</th><td>{$messageData['created_at']}</td></tr>
                   </table>";
-
         renderAdmin($html);
         break;
 
@@ -397,22 +386,26 @@ switch($action) {
                  </nav>
                  <p><a href='admin.php?action=upload_media'>[+] Subir Nuevo Archivo</a></p>
                  <table>
-                   <tr><th>ID</th><th>Nombre de Archivo</th><th>Ruta</th><th>Fecha</th><th>Vista Previa</th><th>Acciones</th></tr>";
-
+                   <tr>
+                     <th>ID</th>
+                     <th>Nombre de Archivo</th>
+                     <th>Ruta</th>
+                     <th>Fecha</th>
+                     <th>Vista Previa</th>
+                     <th>Acciones</th>
+                   </tr>";
         foreach ($mediaItems as $m) {
             $html .= "<tr>
                         <td>{$m['id']}</td>
-                        <td>".htmlspecialchars($m['filename'])."</td>
-                        <td>".htmlspecialchars($m['filepath'])."</td>
-                        <td>".htmlspecialchars($m['created_at'])."</td>
+                        <td>" . htmlspecialchars($m['filename']) . "</td>
+                        <td>" . htmlspecialchars($m['filepath']) . "</td>
+                        <td>" . htmlspecialchars($m['created_at']) . "</td>
                         <td><img src='{$m['filepath']}' alt='' style='max-width:100px;'></td>
                         <td>
-                           <a href='admin.php?action=delete_media&id={$m['id']}'
-                              onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
+                           <a href='admin.php?action=delete_media&id={$m['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
         }
-
         $html .= "</table>";
         renderAdmin($html);
         break;
@@ -425,7 +418,6 @@ switch($action) {
             if (!empty($_FILES['file']['name'])) {
                 $fileName = $_FILES['file']['name'];
                 $tmpName  = $_FILES['file']['tmp_name'];
-
                 $targetDir = __DIR__ . '/static/';
                 if (!is_dir($targetDir)) {
                     mkdir($targetDir, 0777, true);
@@ -433,10 +425,9 @@ switch($action) {
                 // Nombre único
                 $uniqueName = time() . '-' . preg_replace('/[^a-zA-Z0-9._-]/','', $fileName);
                 $targetPath = $targetDir . $uniqueName;
-
                 if (move_uploaded_file($tmpName, $targetPath)) {
                     // Guardar en DB
-                    $dbFilePath = 'static/' . $uniqueName; // ruta relativa
+                    $dbFilePath = 'static/' . $uniqueName;
                     $stmt = $db->prepare("INSERT INTO media (filename, filepath) VALUES (:fn, :fp)");
                     $stmt->bindValue(':fn', $fileName, SQLITE3_TEXT);
                     $stmt->bindValue(':fp', $dbFilePath, SQLITE3_TEXT);
@@ -452,7 +443,6 @@ switch($action) {
         } else {
             $message = '';
         }
-
         $html = "<header><h1>Subir Nuevo Archivo</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Inicio</a>
@@ -517,15 +507,13 @@ switch($action) {
                  <p><a href='admin.php?action=edit_page'>[+] Agregar Nueva Página</a></p>
                  <table>
                     <tr><th>ID</th><th>Título</th><th>Acciones</th></tr>";
-
         while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
             $html .= "<tr>
                         <td>{$row['id']}</td>
-                        <td>".htmlspecialchars($row['title'])."</td>
+                        <td>" . htmlspecialchars($row['title']) . "</td>
                         <td>
                             <a href='admin.php?action=edit_page&id={$row['id']}'>Editar</a> |
-                            <a href='admin.php?action=delete_page&id={$row['id']}'
-                               onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
+                            <a href='admin.php?action=delete_page&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
         }
@@ -538,8 +526,7 @@ switch($action) {
     // -----------------------------------------------------------
     case 'edit_page':
         $id = $_GET['id'] ?? null;
-        $pageData = ['id'=>'','title'=>'','content'=>''];
-
+        $pageData = ['id' => '', 'title' => '', 'content' => ''];
         if ($id) {
             $st = $db->prepare("SELECT * FROM pages WHERE id = :id");
             $st->bindValue(':id', $id, SQLITE3_INTEGER);
@@ -549,9 +536,8 @@ switch($action) {
                 $pageData = $found;
             }
         }
-
         if (isset($_POST['save_page'])) {
-            $title   = $_POST['title']   ?? '';
+            $title   = $_POST['title'] ?? '';
             $content = $_POST['content'] ?? '';
             if ($id) {
                 $st = $db->prepare("UPDATE pages SET title = :title, content = :content WHERE id = :id");
@@ -565,7 +551,6 @@ switch($action) {
             header('Location: admin.php?action=list_pages');
             exit();
         }
-
         $html = "<header><h1>" . ($id ? "Editar Página" : "Agregar Página") . "</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Inicio</a>
@@ -581,11 +566,8 @@ switch($action) {
                  <form method='post'>
                     <label>Título:</label>
                     <input type='text' name='title' value='" . htmlspecialchars($pageData['title']) . "' required>
-
                     <label>Contenido:</label>
-                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>"
-                    . htmlspecialchars($pageData['content']) . "</textarea>
-
+                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>" . htmlspecialchars($pageData['content']) . "</textarea>
                     <button type='submit' name='save_page'>Guardar</button>
                  </form>";
         renderAdmin($html);
@@ -624,7 +606,6 @@ switch($action) {
                  <p><a href='admin.php?action=edit_blog'>[+] Agregar Nueva Entrada</a></p>
                  <table>
                     <tr><th>ID</th><th>Título</th><th>Fecha</th><th>Acciones</th></tr>";
-
         while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
             $html .= "<tr>
                         <td>{$row['id']}</td>
@@ -632,8 +613,7 @@ switch($action) {
                         <td>" . htmlspecialchars($row['created_at']) . "</td>
                         <td>
                             <a href='admin.php?action=edit_blog&id={$row['id']}'>Editar</a> |
-                            <a href='admin.php?action=delete_blog&id={$row['id']}'
-                               onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
+                            <a href='admin.php?action=delete_blog&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
         }
@@ -646,8 +626,7 @@ switch($action) {
     // -----------------------------------------------------------
     case 'edit_blog':
         $id = $_GET['id'] ?? null;
-        $blogData = ['id'=>'','title'=>'','content'=>'','created_at'=>''];
-
+        $blogData = ['id' => '', 'title' => '', 'content' => '', 'created_at' => ''];
         if ($id) {
             $st = $db->prepare("SELECT * FROM blog WHERE id = :id");
             $st->bindValue(':id', $id, SQLITE3_INTEGER);
@@ -657,9 +636,8 @@ switch($action) {
                 $blogData = $found;
             }
         }
-
         if (isset($_POST['save_blog'])) {
-            $title   = $_POST['title']   ?? '';
+            $title   = $_POST['title'] ?? '';
             $content = $_POST['content'] ?? '';
             if ($id) {
                 $st = $db->prepare("UPDATE blog SET title = :title, content = :content WHERE id = :id");
@@ -673,7 +651,6 @@ switch($action) {
             header('Location: admin.php?action=list_blog');
             exit();
         }
-
         $html = "<header><h1>" . ($id ? "Editar Entrada del Blog" : "Agregar Entrada") . "</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Inicio</a>
@@ -689,11 +666,8 @@ switch($action) {
                  <form method='post'>
                     <label>Título:</label>
                     <input type='text' name='title' value='" . htmlspecialchars($blogData['title']) . "' required>
-
                     <label>Contenido:</label>
-                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>"
-                    . htmlspecialchars($blogData['content']) . "</textarea>
-
+                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>" . htmlspecialchars($blogData['content']) . "</textarea>
                     <button type='submit' name='save_blog'>Guardar</button>
                  </form>";
         renderAdmin($html);
@@ -716,8 +690,8 @@ switch($action) {
     // TEMAS: LISTAR Y ACTIVAR
     // -----------------------------------------------------------
     case 'list_themes':
-        $themes       = getAvailableThemes();
-        $activeTheme  = $db->querySingle("SELECT value FROM config WHERE key='active_theme'");
+        $themes = getAvailableThemes();
+        $activeTheme = $db->querySingle("SELECT value FROM config WHERE key='active_theme'");
         $html = "<header><h1>Temas</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Inicio</a>
@@ -730,13 +704,11 @@ switch($action) {
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>";
-
         if (empty($themes)) {
             $html .= "<p>No se encontraron temas en la carpeta css.</p>";
             renderAdmin($html);
             break;
         }
-
         $html .= "<table>
                     <tr><th>Nombre del Tema</th><th>Activo</th><th>Acción</th></tr>";
         foreach ($themes as $tName) {
@@ -754,7 +726,6 @@ switch($action) {
                       </tr>";
         }
         $html .= "</table>";
-
         renderAdmin($html);
         break;
 
@@ -773,7 +744,6 @@ switch($action) {
     case 'edit_theme':
         $themeName = $db->querySingle("SELECT value FROM config WHERE key='active_theme'");
         $themePath = __DIR__ . '/css/' . $themeName . '.css';
-
         if (isset($_POST['save_theme'])) {
             $cssContent = $_POST['css_content'] ?? '';
             file_put_contents($themePath, $cssContent);
@@ -781,9 +751,7 @@ switch($action) {
         } else {
             $message = '';
         }
-
         $cssContent = file_get_contents($themePath);
-
         $html = "<header><h1>Editar Tema: $themeName</h1></header>
                  <nav>
                      <a href='admin.php?action=dashboard'>Inicio</a>
@@ -820,7 +788,6 @@ switch($action) {
         } else {
             $message = '';
         }
-
         $configs = $db->query("SELECT * FROM config ORDER BY id ASC");
         $html = "<header><h1>Configuración del Sitio</h1></header>
                  <nav>
@@ -838,7 +805,6 @@ switch($action) {
                  <form method='post'>
                  <table>
                  <tr><th>Clave</th><th>Valor</th></tr>";
-
         while ($row = $configs->fetchArray(SQLITE3_ASSOC)) {
             $key = htmlspecialchars($row['key']);
             $val = htmlspecialchars($row['value']);
