@@ -2,13 +2,16 @@
 session_start();
 require_once 'config.php';
 
-// Credenciales de demostración (Cambia según necesites)
+// Demo credentials (change these as needed)
 define('ADMIN_USER', 'jocarsa');
 define('ADMIN_PASS', 'jocarsa');
 
-// Conexión a la Base de Datos
+// Connect to the database
 $db = new SQLite3($dbPath);
 
+// ---------------------------------------------------------------------
+// Create all needed tables if not exist
+// ---------------------------------------------------------------------
 $db->exec("CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT UNIQUE NOT NULL,
@@ -44,6 +47,17 @@ $db->exec("CREATE TABLE IF NOT EXISTS media (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
+// ---------------------------------------------------------------------
+// HEROES TABLE (FOR HERO BANNERS)
+// ---------------------------------------------------------------------
+$db->exec("CREATE TABLE IF NOT EXISTS heroes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    page_slug TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    subtitle TEXT,
+    background_image TEXT
+)");
+
 // Insert default config values if they don't exist, including the new analytics_user key
 $db->exec("
     INSERT OR IGNORE INTO config (key, value) VALUES
@@ -58,7 +72,7 @@ $db->exec("
 ");
 
 // -----------------------------------------------------------
-// FUNCIONES AUXILIARES
+// Helper Functions
 // -----------------------------------------------------------
 function isLoggedIn() {
     return (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true);
@@ -225,14 +239,18 @@ function setActiveTheme($db, $themeName) {
 $action = $_GET['action'] ?? 'login';
 $message = '';
 
-// Cerrar sesión
+// -----------------------------------------------------------
+// LOGOUT
+// -----------------------------------------------------------
 if ($action === 'logout') {
     session_destroy();
     header('Location: admin.php');
     exit();
 }
 
-// Procesar inicio de sesión
+// -----------------------------------------------------------
+// PROCESS LOGIN
+// -----------------------------------------------------------
 if ($action === 'do_login') {
     $user = $_POST['username'] ?? '';
     $pass = $_POST['password'] ?? '';
@@ -246,16 +264,19 @@ if ($action === 'do_login') {
     }
 }
 
-// Si no está logueado, forzar login (excepto acción=login)
+// If user not logged in, force login (except action=login)
 if (!isLoggedIn() && $action !== 'login') {
     header('Location: admin.php?action=login');
     exit();
 }
 
+// -----------------------------------------------------------
+// SWITCH ACTIONS
+// -----------------------------------------------------------
 switch($action) {
 
     // -----------------------------------------------------------
-    // LOGIN
+    // LOGIN PAGE
     // -----------------------------------------------------------
     case 'login':
         $html = "<header><h1>Acceso al Panel</h1></header>
@@ -285,6 +306,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <p>Bienvenido al panel de administración.</p>";
@@ -292,7 +314,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // CONTACTO: LISTAR MENSAJES
+    // CONTACT: LIST
     // -----------------------------------------------------------
     case 'list_contact':
         $res = $db->query("SELECT * FROM contact ORDER BY id DESC");
@@ -306,6 +328,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <table>
@@ -332,7 +355,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // CONTACTO: VER UN MENSAJE
+    // CONTACT: VIEW A MESSAGE
     // -----------------------------------------------------------
     case 'view_contact':
         $id = $_GET['id'] ?? 0;
@@ -354,6 +377,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <table>
@@ -368,7 +392,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // BIBLIOTECA DE MEDIOS: LISTAR
+    // MEDIA LIBRARY: LIST
     // -----------------------------------------------------------
     case 'list_media':
         $mediaItems = getAllMedia($db);
@@ -382,6 +406,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <p><a href='admin.php?action=upload_media'>[+] Subir Nuevo Archivo</a></p>
@@ -411,7 +436,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // BIBLIOTECA DE MEDIOS: SUBIR
+    // MEDIA LIBRARY: UPLOAD
     // -----------------------------------------------------------
     case 'upload_media':
         if (isset($_POST['upload'])) {
@@ -422,11 +447,11 @@ switch($action) {
                 if (!is_dir($targetDir)) {
                     mkdir($targetDir, 0777, true);
                 }
-                // Nombre único
+                // Create unique name
                 $uniqueName = time() . '-' . preg_replace('/[^a-zA-Z0-9._-]/','', $fileName);
                 $targetPath = $targetDir . $uniqueName;
                 if (move_uploaded_file($tmpName, $targetPath)) {
-                    // Guardar en DB
+                    // Save in DB
                     $dbFilePath = 'static/' . $uniqueName;
                     $stmt = $db->prepare("INSERT INTO media (filename, filepath) VALUES (:fn, :fp)");
                     $stmt->bindValue(':fn', $fileName, SQLITE3_TEXT);
@@ -453,6 +478,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  $message
@@ -465,7 +491,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // BIBLIOTECA DE MEDIOS: ELIMINAR
+    // MEDIA LIBRARY: DELETE
     // -----------------------------------------------------------
     case 'delete_media':
         $id = $_GET['id'] ?? null;
@@ -488,7 +514,7 @@ switch($action) {
         exit();
 
     // -----------------------------------------------------------
-    // PÁGINAS: LISTAR
+    // PAGES: LIST
     // -----------------------------------------------------------
     case 'list_pages':
         $res = $db->query("SELECT * FROM pages ORDER BY id DESC");
@@ -502,6 +528,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <p><a href='admin.php?action=edit_page'>[+] Agregar Nueva Página</a></p>
@@ -522,7 +549,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // PÁGINAS: EDITAR (Agregar / Actualizar)
+    // PAGES: EDIT / ADD
     // -----------------------------------------------------------
     case 'edit_page':
         $id = $_GET['id'] ?? null;
@@ -561,6 +588,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <form method='post'>
@@ -574,7 +602,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // PÁGINAS: ELIMINAR
+    // PAGES: DELETE
     // -----------------------------------------------------------
     case 'delete_page':
         $id = $_GET['id'] ?? null;
@@ -587,7 +615,7 @@ switch($action) {
         exit();
 
     // -----------------------------------------------------------
-    // BLOG: LISTAR
+    // BLOG: LIST
     // -----------------------------------------------------------
     case 'list_blog':
         $res = $db->query("SELECT * FROM blog ORDER BY id DESC");
@@ -601,6 +629,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <p><a href='admin.php?action=edit_blog'>[+] Agregar Nueva Entrada</a></p>
@@ -622,7 +651,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // BLOG: EDITAR / AGREGAR
+    // BLOG: EDIT / ADD
     // -----------------------------------------------------------
     case 'edit_blog':
         $id = $_GET['id'] ?? null;
@@ -661,6 +690,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <form method='post'>
@@ -674,7 +704,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // BLOG: ELIMINAR
+    // BLOG: DELETE
     // -----------------------------------------------------------
     case 'delete_blog':
         $id = $_GET['id'] ?? null;
@@ -687,7 +717,7 @@ switch($action) {
         exit();
 
     // -----------------------------------------------------------
-    // TEMAS: LISTAR Y ACTIVAR
+    // THEMES: LIST & ACTIVATE
     // -----------------------------------------------------------
     case 'list_themes':
         $themes = getAvailableThemes();
@@ -702,6 +732,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>";
         if (empty($themes)) {
@@ -739,7 +770,7 @@ switch($action) {
         exit();
 
     // -----------------------------------------------------------
-    // TEMAS: EDITAR
+    // THEMES: EDIT
     // -----------------------------------------------------------
     case 'edit_theme':
         $themeName = $db->querySingle("SELECT value FROM config WHERE key='active_theme'");
@@ -762,6 +793,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  $message
@@ -774,7 +806,7 @@ switch($action) {
         break;
 
     // -----------------------------------------------------------
-    // CONFIG: LISTAR
+    // CONFIG: LIST & SAVE
     // -----------------------------------------------------------
     case 'list_config':
         if (isset($_POST['save_config'])) {
@@ -799,6 +831,7 @@ switch($action) {
                      <a href='admin.php?action=list_config'>Configuración</a>
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  $message
@@ -818,6 +851,155 @@ switch($action) {
                   </form>";
         renderAdmin($html);
         break;
+
+    // -----------------------------------------------------------
+    // HEROES: LIST
+    // -----------------------------------------------------------
+    case 'list_heroes':
+        requireLogin();
+        $res = $db->query("SELECT * FROM heroes ORDER BY id DESC");
+        $html = "<header><h1>Héroes (Hero Banners)</h1></header>
+                 <nav>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
+                     <a href='admin.php?action=list_blog'>Blog</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=logout'>Salir</a>
+                 </nav>
+                 <p><a href='admin.php?action=edit_hero'>[+] Agregar Nuevo Hero</a></p>
+                 <table>
+                    <tr>
+                        <th>ID</th>
+                        <th>Page Slug</th>
+                        <th>Título</th>
+                        <th>Subtitle</th>
+                        <th>Background Image</th>
+                        <th>Acciones</th>
+                    </tr>";
+        while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
+            $html .= "<tr>
+                        <td>{$row['id']}</td>
+                        <td>" . htmlspecialchars($row['page_slug']) . "</td>
+                        <td>" . htmlspecialchars($row['title']) . "</td>
+                        <td>" . htmlspecialchars($row['subtitle']) . "</td>
+                        <td>" . htmlspecialchars($row['background_image']) . "</td>
+                        <td>
+                          <a href='admin.php?action=edit_hero&id={$row['id']}'>Editar</a> |
+                          <a href='admin.php?action=delete_hero&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
+                        </td>
+                      </tr>";
+        }
+        $html .= "</table>";
+        renderAdmin($html);
+        break;
+
+    // -----------------------------------------------------------
+    // HEROES: EDIT (Add / Update)
+    // -----------------------------------------------------------
+    case 'edit_hero':
+        requireLogin();
+        $id = $_GET['id'] ?? null;
+        $heroData = [
+            'id' => '',
+            'page_slug' => '',
+            'title' => '',
+            'subtitle' => '',
+            'background_image' => ''
+        ];
+
+        // Fetch existing if editing
+        if ($id) {
+            $stmt = $db->prepare("SELECT * FROM heroes WHERE id = :id");
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $res = $stmt->execute();
+            $found = $res->fetchArray(SQLITE3_ASSOC);
+            if ($found) {
+                $heroData = $found;
+            }
+        }
+
+        // Handle form submission
+        if (isset($_POST['save_hero'])) {
+            $page_slug       = trim($_POST['page_slug']);
+            $title           = trim($_POST['title']);
+            $subtitle        = trim($_POST['subtitle']);
+            $backgroundImage = trim($_POST['background_image']);
+
+            if ($id) {
+                // Update existing
+                $st = $db->prepare("UPDATE heroes
+                                    SET page_slug = :page_slug,
+                                        title = :title,
+                                        subtitle = :subtitle,
+                                        background_image = :bg
+                                    WHERE id = :id");
+                $st->bindValue(':id', $id, SQLITE3_INTEGER);
+            } else {
+                // Insert new
+                $st = $db->prepare("INSERT INTO heroes (page_slug, title, subtitle, background_image)
+                                    VALUES (:page_slug, :title, :subtitle, :bg)");
+            }
+            $st->bindValue(':page_slug', $page_slug, SQLITE3_TEXT);
+            $st->bindValue(':title', $title, SQLITE3_TEXT);
+            $st->bindValue(':subtitle', $subtitle, SQLITE3_TEXT);
+            $st->bindValue(':bg', $backgroundImage, SQLITE3_TEXT);
+            $st->execute();
+
+            header('Location: admin.php?action=list_heroes');
+            exit();
+        }
+
+        // Render form
+        $html = "
+        <header><h1>" . ($id ? "Editar Hero" : "Agregar Hero") . "</h1></header>
+        <nav>
+            <a href='admin.php?action=dashboard'>Inicio</a>
+            <a href='admin.php?action=list_pages'>Páginas</a>
+            <a href='admin.php?action=list_blog'>Blog</a>
+            <a href='admin.php?action=list_themes'>Temas</a>
+            <a href='admin.php?action=edit_theme'>Editar Tema</a>
+            <a href='admin.php?action=list_config'>Configuración</a>
+            <a href='admin.php?action=list_media'>Biblioteca</a>
+            <a href='admin.php?action=list_contact'>Contacto</a>
+            <a href='admin.php?action=list_heroes'>Heroes</a>
+            <a href='admin.php?action=logout'>Salir</a>
+        </nav>
+        <form method='post'>
+            <label for='page_slug'>Page Slug (ej: 'blog', 'contacto', 'inicio', o el título exacto de la página):</label>
+            <input type='text' name='page_slug' id='page_slug' value='" . htmlspecialchars($heroData['page_slug']) . "' required>
+
+            <label for='title'>Título:</label>
+            <input type='text' name='title' id='title' value='" . htmlspecialchars($heroData['title']) . "' required>
+
+            <label for='subtitle'>Subtítulo:</label>
+            <input type='text' name='subtitle' id='subtitle' value='" . htmlspecialchars($heroData['subtitle']) . "'>
+
+            <label for='background_image'>URL de la imagen de fondo:</label>
+            <input type='text' name='background_image' id='background_image' value='" . htmlspecialchars($heroData['background_image']) . "'>
+
+            <button type='submit' name='save_hero'>Guardar</button>
+        </form>";
+        renderAdmin($html);
+        break;
+
+    // -----------------------------------------------------------
+    // HEROES: DELETE
+    // -----------------------------------------------------------
+    case 'delete_hero':
+        requireLogin();
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            $st = $db->prepare("DELETE FROM heroes WHERE id = :id");
+            $st->bindValue(':id', $id, SQLITE3_INTEGER);
+            $st->execute();
+        }
+        header('Location: admin.php?action=list_heroes');
+        exit();
 
     // -----------------------------------------------------------
     // DEFAULT

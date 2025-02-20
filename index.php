@@ -1,10 +1,10 @@
 <?php
-// Mini CMS with PHP and SQLite3
 require_once 'config.php';
 
 // Initialize SQLite3 database
 $db = new SQLite3($dbPath);
 
+// Ensure all necessary tables exist
 $db->exec("CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT UNIQUE NOT NULL,
@@ -33,7 +33,18 @@ $db->exec("CREATE TABLE IF NOT EXISTS contact (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
-// Insert default config values if they don't exist
+// ---------------------------------------------------------------------
+// HERO TABLE (NEW)
+// ---------------------------------------------------------------------
+$db->exec("CREATE TABLE IF NOT EXISTS heroes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    page_slug TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    subtitle TEXT,
+    background_image TEXT
+)");
+
+// Insert default config values if not exists
 $db->exec("
     INSERT OR IGNORE INTO config (key, value) VALUES
         ('title', 'jocarsa | gainsboro'),
@@ -68,25 +79,55 @@ $analyticsUser   = htmlspecialchars($config['analytics_user'] ?? 'defaultUser');
 // ---------------------------------------------------------------------
 $themeFiles = glob(__DIR__ . '/css/*.css');
 $availableThemes = [];
-
 if ($themeFiles !== false) {
     foreach ($themeFiles as $filePath) {
-        // Extract the filename without extension
         $filename = pathinfo($filePath, PATHINFO_FILENAME);
         $availableThemes[] = $filename;
     }
 }
 
-// Determine the active theme from the database config
+// Determine the active theme
 $activeTheme = $config['active_theme'] ?? 'gainsboro';
 if (!in_array($activeTheme, $availableThemes) && count($availableThemes) > 0) {
     $activeTheme = $availableThemes[0];
 }
 
 // ---------------------------------------------------------------------
-// Helper function to render the final HTML, now with analyticsUser
+// Function to fetch hero for a given slug
+// ---------------------------------------------------------------------
+function fetchHeroSection($db, $slug) {
+    $stmt = $db->prepare("SELECT * FROM heroes WHERE page_slug = :slug");
+    $stmt->bindValue(':slug', $slug, SQLITE3_TEXT);
+    $res = $stmt->execute();
+    $hero = $res->fetchArray(SQLITE3_ASSOC);
+
+    if (!$hero) {
+        // No hero found
+        return '';
+    }
+
+    $title    = htmlspecialchars($hero['title']);
+    $subtitle = htmlspecialchars($hero['subtitle']);
+    $bgImage  = htmlspecialchars($hero['background_image']);
+
+    // Return the hero HTML
+    // NOTE: We'll style `.hero` to be full-width, placed after nav, before main
+    return "
+    <section class='hero' style='background-image: url(\"$bgImage\");'>
+        <div class='hero-content'>
+            <h2>$title</h2>
+            <p>$subtitle</p>
+        </div>
+    </section>
+    ";
+}
+
+// ---------------------------------------------------------------------
+// Helper function to render final HTML
+// Adds $hero after <nav>, before <main>, full width
 // ---------------------------------------------------------------------
 function render(
+    $hero,
     $content,
     $menu,
     $theme,
@@ -113,37 +154,43 @@ function render(
     echo "    <body>\n";
     echo "        <header>\n";
     echo "            <h1>\n";
-    echo "                <a href='?page=inicio'>";
+    echo "                <a href='?page=inicio'>\n";
     echo "                    <img src=\"$logo\" alt=\"Site Logo\"> $title\n";
-    echo "                </a>";
+    echo "                </a>\n";
     echo "            </h1>\n";
     echo "        </header>\n";
     echo "        <nav>\n";
     echo "            $menu\n";
     echo "        </nav>\n";
+
+    // Place hero here (if any)
+    if (!empty($hero)) {
+        echo $hero;
+    }
+
+    // main container remains boxed
     echo "        <main>\n";
     echo "            $content\n";
     echo "        </main>\n";
+
     echo "        <footer>\n";
     echo "            &copy; " . date('Y') . " <img src=\"$footerImage\" alt=\"Footer Logo\"> $title\n";
     echo "        </footer>\n";
-    // Insert the analytics script with the user parameter from configuration
+
+    // Insert the analytics script with user param
     echo "        <script src=\"https://ghostwhite.jocarsa.com/analytics.js?user=$analyticsUser\"></script>\n";
     echo "    </body>\n";
     echo "</html>\n";
 }
 
 // ---------------------------------------------------------------------
-// Build the menu
+// Build the main menu
 // ---------------------------------------------------------------------
 $menu = "<a href='?page=blog'>Blog</a>";
-// Add dynamic pages to the menu
 $result = $db->query("SELECT title FROM pages ORDER BY title ASC");
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $menu .= " | <a href='?page=" . urlencode($row['title']) . "'>" . htmlspecialchars($row['title']) . "</a>";
 }
-
-// Add a static link to "Contacto" in the main menu
 $menu .= " | <a href='?page=contacto'>Contacto</a>";
 
 // ---------------------------------------------------------------------
@@ -152,7 +199,7 @@ $menu .= " | <a href='?page=contacto'>Contacto</a>";
 $page = $_GET['page'] ?? 'inicio';
 
 if ($page === 'blog') {
-    // Display blog entries
+    // BLOG
     $result = $db->query("SELECT title, content, created_at FROM blog ORDER BY created_at DESC");
     $blogContent = "<h2>Blog</h2>\n";
     while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
@@ -162,21 +209,22 @@ if ($page === 'blog') {
         $blogContent .= "    <div>" . $row['content'] . "</div>\n"; // HTML allowed
         $blogContent .= "</article>\n<hr>\n";
     }
-    render($blogContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
+    // fetch hero for "blog"
+    $heroSection = fetchHeroSection($db, 'blog');
+
+    render($heroSection, $blogContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
 
 } elseif ($page === 'contacto') {
-    // Contact form page
+    // CONTACT
     $contactContent = "<h2>Contacto</h2>";
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // Collect and sanitize form data
         $name    = trim($_POST['name'] ?? '');
         $email   = trim($_POST['email'] ?? '');
         $subject = trim($_POST['subject'] ?? '');
         $message = trim($_POST['message'] ?? '');
 
         if ($name && $email && $subject && $message) {
-            // Insert into contact table
             $stmt = $db->prepare("INSERT INTO contact (name, email, subject, message)
                                   VALUES (:n, :e, :s, :m)");
             $stmt->bindValue(':n', $name, SQLITE3_TEXT);
@@ -184,14 +232,12 @@ if ($page === 'blog') {
             $stmt->bindValue(':s', $subject, SQLITE3_TEXT);
             $stmt->bindValue(':m', $message, SQLITE3_TEXT);
             $stmt->execute();
-
             $contactContent .= "<p>¡Gracias por tu mensaje, $name! Te responderemos pronto.</p>";
         } else {
             $contactContent .= "<p style='color:red;'>Por favor, rellena todos los campos.</p>";
         }
     }
 
-    // Display form
     $contactContent .= "
     <form method='post'>
         <label for='name'>Nombre Completo:</label><br>
@@ -209,10 +255,13 @@ if ($page === 'blog') {
         <button type='submit'>Enviar</button>
     </form>";
 
-    render($contactContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
+    // fetch hero for "contacto"
+    $heroSection = fetchHeroSection($db, 'contacto');
+
+    render($heroSection, $contactContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
 
 } else {
-    // Display a specific page
+    // SPECIFIC PAGE
     $stmt = $db->prepare("SELECT content FROM pages WHERE title = :title");
     $stmt->bindValue(':title', $page, SQLITE3_TEXT);
     $result = $stmt->execute();
@@ -220,9 +269,12 @@ if ($page === 'blog') {
 
     if ($row) {
         $pageContent = "<h2>" . htmlspecialchars($page) . "</h2>\n" . "<div>" . $row['content'] . "</div>\n";
-        render($pageContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
+        // fetch hero for the given $page
+        $heroSection = fetchHeroSection($db, $page);
+
+        render($heroSection, $pageContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
     } else {
-        render("<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
+        render('', "<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
     }
 }
 ?>

@@ -159,3 +159,46 @@ iframe{
 	border:none;
 	width:100%;
 }
+/* Make sure <body> and <html> span full width (already normal) */
+html, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Ubuntu', Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+/* The hero section is placed outside the .main container, so let it stretch */
+.hero {
+    width: 100%;
+    min-height: 400px; /* or whatever height you prefer */
+    display: flex;          /* enables flexbox */
+    align-items: center;    /* vertical centering */
+    justify-content: center;/* horizontal centering */
+    text-align: center;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    color: #ffffff; /* White text on background image */
+}
+
+/* Overlay container to limit content width or add a backdrop */
+.hero-content {
+    max-width: 800px;
+    /*background-color: rgba(0, 0, 0, 0.4);*/ /* optional translucent background to make text more readable */
+    padding: 20px;
+    border-radius: 4px;
+    /* margin: 0 auto; <-- not needed if using flex center on the parent */
+}
+
+.hero h2 {
+    margin: 0 0 10px;
+    font-size: 2rem;
+}
+
+.hero p {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
