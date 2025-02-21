@@ -176,7 +176,7 @@ html, body {
 /* The hero section is placed outside the .main container, so let it stretch */
 .hero {
     width: 100%;
-    min-height: 400px; /* or whatever height you prefer */
+    min-height: 700px; /* or whatever height you prefer */
     display: flex;          /* enables flexbox */
     align-items: center;    /* vertical centering */
     justify-content: center;/* horizontal centering */
@@ -194,15 +194,18 @@ html, body {
     padding: 20px;
     border-radius: 4px;
     /* margin: 0 auto; <-- not needed if using flex center on the parent */
+    text-align:center;
 }
 
 .hero h2 {
-    margin: 0 0 10px;
-    font-size: 2rem;
+   text-align:center;
+    
+    font-size:4em
 }
 
 .hero p {
-    margin: 0;
-    font-size: 1.2rem;
+ text-align:center;
+    font-size: 3rem;
+
 }
 
