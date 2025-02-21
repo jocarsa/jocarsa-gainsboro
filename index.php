@@ -277,5 +277,61 @@ if ($page === 'blog') {
         render('', "<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
     }
 }
+
+// ---------------------------------------------------------------------
+// Generate sitemap.xml on every load
+// ---------------------------------------------------------------------
+function generateSitemap($db) {
+    // Determine the protocol and domain for absolute URLs
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+    $domain = $protocol . $_SERVER['HTTP_HOST'];
+
+    $urls = [];
+
+    // Homepage (assuming 'inicio' is the homepage)
+    $urls[] = ['loc' => $domain . '/?page=inicio', 'lastmod' => date('Y-m-d')];
+
+    // Blog and Contact pages
+    $urls[] = ['loc' => $domain . '/?page=blog', 'lastmod' => date('Y-m-d')];
+    $urls[] = ['loc' => $domain . '/?page=contacto', 'lastmod' => date('Y-m-d')];
+
+    // Static pages from the pages table
+    $result = $db->query("SELECT title FROM pages");
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $pageTitle = urlencode($row['title']);
+        $urls[] = ['loc' => $domain . '/?page=' . $pageTitle, 'lastmod' => date('Y-m-d')];
+    }
+
+    // Individual blog posts (assuming they can be accessed via ?page=blog&post=ID)
+    $result = $db->query("SELECT id, created_at FROM blog");
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $urls[] = [
+            'loc' => $domain . '/?page=blog&post=' . $row['id'],
+            'lastmod' => date('Y-m-d', strtotime($row['created_at']))
+        ];
+    }
+
+    // Build XML content using DOMDocument
+    $xml = new DOMDocument('1.0', 'UTF-8');
+    $xml->formatOutput = true;
+    $urlset = $xml->createElement('urlset');
+    $urlset->setAttribute('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9');
+
+    foreach ($urls as $entry) {
+        $url = $xml->createElement('url');
+        $loc = $xml->createElement('loc', htmlspecialchars($entry['loc']));
+        $url->appendChild($loc);
+        $lastmod = $xml->createElement('lastmod', $entry['lastmod']);
+        $url->appendChild($lastmod);
+        $urlset->appendChild($url);
+    }
+
+    $xml->appendChild($urlset);
+    // Save the sitemap.xml file in the root directory
+    $xml->save('sitemap.xml');
+}
+
+// Call the sitemap generator
+generateSitemap($db);
 ?>
 
