@@ -821,7 +821,7 @@ switch ($action) {
                         <td>" . htmlspecialchars($row['category']) . "</td>
                         <td>" . htmlspecialchars($row['name']) . "</td>
                         <td>" . htmlspecialchars($row['url']) . "</td>
-                        <td><img src='" . htmlspecialchars($row['logo']) . "' alt='" . htmlspecialchars($row['name']) . "' style='max-width:50px;'></td>
+                        <td><img src='img/" . htmlspecialchars($row['logo']) . "' alt='" . htmlspecialchars($row['name']) . "' style='max-width:50px;'></td>
                         <td>
                           <a href='admin.php?action=edit_social_media&id={$row['id']}'>Editar</a> |
                           <a href='admin.php?action=delete_social_media&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
@@ -936,4 +936,5 @@ switch ($action) {
         exit();
 }
 ?>
-
+	<link rel="stylesheet" href="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa%20%7C%20lightslateblue.css">
+    <script src="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa%20%7C%20lightslateblue.js"></script>
