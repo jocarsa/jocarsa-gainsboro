@@ -76,26 +76,33 @@ $db->exec("
         ('analytics_user', 'defaultUser')
 ");
 
-// Insert default social media links with empty URLs
-$db->exec("
-    INSERT OR IGNORE INTO social_media (category, name, url, logo) VALUES
-        ('Generalistas', 'Facebook', '', 'facebook.png'),
-        ('Generalistas', 'Instagram', '', 'instagram.png'),
-        ('Generalistas', 'Twitter (X)', '', 'twitter.png'),
-        ('Generalistas', 'TikTok', '', 'tiktok.png'),
-        ('Generalistas', 'Snapchat', '', 'snapchat.png'),
-        ('Profesionales y negocios', 'LinkedIn', '', 'linkedin.png'),
-        ('Profesionales y negocios', 'Pinterest', '', 'pinterest.png'),
-        ('Profesionales y negocios', 'GitHub', '', 'github.png'),
-        ('Mensajería instantánea', 'WhatsApp', '', 'whatsapp.png'),
-        ('Mensajería instantánea', 'Telegram', '', 'telegram.png'),
-        ('Mensajería instantánea', 'Discord', '', 'discord.png'),
-        ('Streaming y video', 'YouTube', '', 'youtube.png'),
-        ('Streaming y video', 'Twitch', '', 'twitch.png'),
-        ('Redes sociales emergentes o de nicho', 'Threads', '', 'threads.png'),
-        ('Redes sociales emergentes o de nicho', 'Mastodon', '', 'mastodon.png'),
-        ('Redes sociales emergentes o de nicho', 'BeReal', '', 'bereal.png')
-");
+// Insert default social media links only if they don't exist
+$defaultSocialMedia = [
+    ['Generalistas', 'Facebook', 'facebook.png'],
+    ['Generalistas', 'Instagram', 'instagram.png'],
+    ['Generalistas', 'Twitter (X)', 'twitter.png'],
+    ['Generalistas', 'TikTok', 'tiktok.png'],
+    ['Generalistas', 'Snapchat', 'snapchat.png'],
+    ['Profesionales y negocios', 'LinkedIn', 'linkedin.png'],
+    ['Profesionales y negocios', 'Pinterest', 'pinterest.png'],
+    ['Profesionales y negocios', 'GitHub', 'github.png'],
+    ['Mensajería instantánea', 'WhatsApp', 'whatsapp.png'],
+    ['Mensajería instantánea', 'Telegram', 'telegram.png'],
+    ['Mensajería instantánea', 'Discord', 'discord.png'],
+    ['Streaming y video', 'YouTube', 'youtube.png'],
+    ['Streaming y video', 'Twitch', 'twitch.png'],
+    ['Redes sociales emergentes o de nicho', 'Threads', 'threads.png'],
+    ['Redes sociales emergentes o de nicho', 'Mastodon', 'mastodon.png'],
+    ['Redes sociales emergentes o de nicho', 'BeReal', 'bereal.png']
+];
+
+foreach ($defaultSocialMedia as $item) {
+    list($category, $name, $logo) = $item;
+    $db->exec("
+        INSERT OR IGNORE INTO social_media (category, name, url, logo)
+        VALUES ('$category', '$name', '', '$logo')
+    ");
+}
 
 // -----------------------------------------------------------
 // Helper Functions
@@ -117,114 +124,33 @@ function renderAdmin($content) {
 <head>
     <meta charset='utf-8'>
     <title>Panel de Administración</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
-        body, h1, h2, p, a, table, th, td, label, textarea, input, select {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Ubuntu', Arial, sans-serif;
-        }
-        body {
-            background-color: #f4f4f4;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .admin-container {
-            width: 90%;
-            max-width: 1000px;
-            margin: 20px auto;
-            background: #ffffff;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        header h1 {
-            background-color: #3a3a3a;
-            color: gainsboro;
-            padding: 20px;
-            text-align: center;
-            font-size: 24px;
-            border-radius: 8px 8px 0 0;
-            margin-bottom: 0;
-        }
-        nav {
-            background-color: #444;
-            padding: 10px;
-            text-align: center;
-            margin-bottom: 20px;
-            border-radius: 0 0 8px 8px;
-        }
-        nav a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-            margin: 0 10px;
-            padding: 8px 15px;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-        nav a:hover {
-            background-color: #3a3a3a;
-        }
-        label {
-            display: block;
-            margin-top: 15px;
-            font-weight: bold;
-        }
-        input[type='text'], input[type='password'], textarea, select, input[type='file'] {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-        }
-        button {
-            background-color: #3a3a3a;
-            color: gainsboro;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-        button:hover {
-            background-color: #2a2a2a;
-        }
-        .danger { color: red; }
-        .success { color: green; }
-        footer {
-            background-color: #3a3a3a;
-            color: gainsboro;
-            padding: 20px;
-            text-align: center;
-            margin-top: auto;
-        }
-        .jocarsa-lightslateblue {
-            resize: vertical;
-            min-height: 200px;
-        }
-    </style>
+    <link rel='stylesheet' href='admin.css'>
 </head>
 <body>
-<div class='admin-container'>
-    $content
+<div id='admin-container'>
+    <div id='admin-sidebar'>
+        <nav>
+            <a href='admin.php?action=dashboard'>Inicio</a>
+            <a href='admin.php?action=list_pages'>Páginas</a>
+            <a href='admin.php?action=list_blog'>Blog</a>
+            <a href='admin.php?action=list_themes'>Temas</a>
+            <a href='admin.php?action=edit_theme'>Editar Tema</a>
+            <a href='admin.php?action=list_config'>Configuración</a>
+            <a href='admin.php?action=list_media'>Biblioteca</a>
+            <a href='admin.php?action=list_contact'>Contacto</a>
+            <a href='admin.php?action=list_heroes'>Heroes</a>
+            <a href='admin.php?action=list_social_media'>Redes Sociales</a>
+            <a href='admin.php?action=logout'>Salir</a>
+        </nav>
+    </div>
+    <div id='admin-content'>
+        <div id='admin-header'>
+            <h1>Panel de Administración</h1>
+        </div>
+        <div class='admin-section'>
+            $content
+        </div>
+    </div>
 </div>
 <footer>
     &copy; " . date('Y') . " jocarsa Admin Panel
@@ -305,16 +231,17 @@ switch($action) {
     // LOGIN PAGE
     // -----------------------------------------------------------
     case 'login':
-        $html = "<header><h1>Acceso al Panel</h1></header>
-                 <nav></nav>
-                 $message
-                 <form method='post' action='admin.php?action=do_login'>
-                    <label>Usuario:</label>
-                    <input type='text' name='username' required>
-                    <label>Contraseña:</label>
-                    <input type='password' name='password' required>
-                    <button type='submit'>Acceder</button>
-                 </form>";
+        $html = "<div class='admin-form'>
+                    <h2>Acceso al Panel</h2>
+                    $message
+                    <form method='post' action='admin.php?action=do_login'>
+                        <label>Usuario:</label>
+                        <input type='text' name='username' required>
+                        <label>Contraseña:</label>
+                        <input type='password' name='password' required>
+                        <button type='submit'>Acceder</button>
+                    </form>
+                 </div>";
         renderAdmin($html);
         break;
 
@@ -322,21 +249,7 @@ switch($action) {
     // DASHBOARD
     // -----------------------------------------------------------
     case 'dashboard':
-        $html = "<header><h1>Panel de Administración</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
-                 <p>Bienvenido al panel de administración.</p>";
+        $html = "<h2>Bienvenido al panel de administración.</h2>";
         renderAdmin($html);
         break;
 
@@ -345,21 +258,9 @@ switch($action) {
     // -----------------------------------------------------------
     case 'list_contact':
         $res = $db->query("SELECT * FROM contact ORDER BY id DESC");
-        $html = "<header><h1>Contacto</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
-                 <table>
+        $html = "<h2>Contacto</h2>
+                 <p><a href='admin.php?action=view_contact'>Ver Mensajes</a></p>
+                 <table class='admin-table'>
                    <tr>
                      <th>ID</th>
                      <th>Nombre</th>
@@ -395,21 +296,8 @@ switch($action) {
             header('Location: admin.php?action=list_contact');
             exit();
         }
-        $html = "<header><h1>Ver Mensaje</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
-                 <table>
+        $html = "<h2>Ver Mensaje</h2>
+                 <table class='admin-table'>
                     <tr><th>ID</th><td>{$messageData['id']}</td></tr>
                     <tr><th>Nombre</th><td>" . htmlspecialchars($messageData['name']) . "</td></tr>
                     <tr><th>Correo Electrónico</th><td>" . htmlspecialchars($messageData['email']) . "</td></tr>
@@ -425,22 +313,9 @@ switch($action) {
     // -----------------------------------------------------------
     case 'list_media':
         $mediaItems = getAllMedia($db);
-        $html = "<header><h1>Biblioteca</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
+        $html = "<h2>Biblioteca</h2>
                  <p><a href='admin.php?action=upload_media'>[+] Subir Nuevo Archivo</a></p>
-                 <table>
+                 <table class='admin-table'>
                    <tr>
                      <th>ID</th>
                      <th>Nombre de Archivo</th>
@@ -498,26 +373,15 @@ switch($action) {
         } else {
             $message = '';
         }
-        $html = "<header><h1>Subir Nuevo Archivo</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
-                 $message
-                 <form method='post' enctype='multipart/form-data'>
-                   <label>Selecciona el archivo:</label>
-                   <input type='file' name='file'>
-                   <button type='submit' name='upload'>Subir</button>
-                 </form>";
+        $html = "<div class='admin-form'>
+                    <h2>Subir Nuevo Archivo</h2>
+                    $message
+                    <form method='post' enctype='multipart/form-data'>
+                        <label>Selecciona el archivo:</label>
+                        <input type='file' name='file'>
+                        <button type='submit' name='upload'>Subir</button>
+                    </form>
+                 </div>";
         renderAdmin($html);
         break;
 
@@ -549,22 +413,9 @@ switch($action) {
     // -----------------------------------------------------------
     case 'list_pages':
         $res = $db->query("SELECT * FROM pages ORDER BY id DESC");
-        $html = "<header><h1>Páginas</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
+        $html = "<h2>Páginas</h2>
                  <p><a href='admin.php?action=edit_page'>[+] Agregar Nueva Página</a></p>
-                 <table>
+                 <table class='admin-table'>
                     <tr><th>ID</th><th>Título</th><th>Acciones</th></tr>";
         while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
             $html .= "<tr>
@@ -610,27 +461,16 @@ switch($action) {
             header('Location: admin.php?action=list_pages');
             exit();
         }
-        $html = "<header><h1>" . ($id ? "Editar Página" : "Agregar Página") . "</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
-                 <form method='post'>
-                    <label>Título:</label>
-                    <input type='text' name='title' value='" . htmlspecialchars($pageData['title']) . "' required>
-                    <label>Contenido:</label>
-                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>" . htmlspecialchars($pageData['content']) . "</textarea>
-                    <button type='submit' name='save_page'>Guardar</button>
-                 </form>";
+        $html = "<div class='admin-form'>
+                    <h2>" . ($id ? "Editar Página" : "Agregar Página") . "</h2>
+                    <form method='post'>
+                        <label>Título:</label>
+                        <input type='text' name='title' value='" . htmlspecialchars($pageData['title']) . "' required>
+                        <label>Contenido:</label>
+                        <textarea name='content' class='jocarsa-lightslateblue' rows='10'>" . htmlspecialchars($pageData['content']) . "</textarea>
+                        <button type='submit' name='save_page'>Guardar</button>
+                    </form>
+                 </div>";
         renderAdmin($html);
         break;
 
@@ -652,22 +492,9 @@ switch($action) {
     // -----------------------------------------------------------
     case 'list_blog':
         $res = $db->query("SELECT * FROM blog ORDER BY id DESC");
-        $html = "<header><h1>Entradas del Blog</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
+        $html = "<h2>Entradas del Blog</h2>
                  <p><a href='admin.php?action=edit_blog'>[+] Agregar Nueva Entrada</a></p>
-                 <table>
+                 <table class='admin-table'>
                     <tr><th>ID</th><th>Título</th><th>Fecha</th><th>Acciones</th></tr>";
         while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
             $html .= "<tr>
@@ -714,27 +541,16 @@ switch($action) {
             header('Location: admin.php?action=list_blog');
             exit();
         }
-        $html = "<header><h1>" . ($id ? "Editar Entrada del Blog" : "Agregar Entrada") . "</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
-                 <form method='post'>
-                    <label>Título:</label>
-                    <input type='text' name='title' value='" . htmlspecialchars($blogData['title']) . "' required>
-                    <label>Contenido:</label>
-                    <textarea name='content' class='jocarsa-lightslateblue' rows='10'>" . htmlspecialchars($blogData['content']) . "</textarea>
-                    <button type='submit' name='save_blog'>Guardar</button>
-                 </form>";
+        $html = "<div class='admin-form'>
+                    <h2>" . ($id ? "Editar Entrada del Blog" : "Agregar Entrada") . "</h2>
+                    <form method='post'>
+                        <label>Título:</label>
+                        <input type='text' name='title' value='" . htmlspecialchars($blogData['title']) . "' required>
+                        <label>Contenido:</label>
+                        <textarea name='content' class='jocarsa-lightslateblue' rows='10'>" . htmlspecialchars($blogData['content']) . "</textarea>
+                        <button type='submit' name='save_blog'>Guardar</button>
+                    </form>
+                 </div>";
         renderAdmin($html);
         break;
 
@@ -757,26 +573,13 @@ switch($action) {
     case 'list_themes':
         $themes = getAvailableThemes();
         $activeTheme = $db->querySingle("SELECT value FROM config WHERE key='active_theme'");
-        $html = "<header><h1>Temas</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>";
+        $html = "<h2>Temas</h2>";
         if (empty($themes)) {
             $html .= "<p>No se encontraron temas en la carpeta css.</p>";
             renderAdmin($html);
             break;
         }
-        $html .= "<table>
+        $html .= "<table class='admin-table'>
                     <tr><th>Nombre del Tema</th><th>Activo</th><th>Acción</th></tr>";
         foreach ($themes as $tName) {
             $isActive = ($tName === $activeTheme) ? 'Sí' : 'No';
@@ -819,26 +622,15 @@ switch($action) {
             $message = '';
         }
         $cssContent = file_get_contents($themePath);
-        $html = "<header><h1>Editar Tema: $themeName</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
-                 $message
-                 <form method='post'>
-                    <label>Contenido CSS:</label>
-                    <textarea name='css_content' class='jocarsa-lightslateblue' rows='20'>" . htmlspecialchars($cssContent) . "</textarea>
-                    <button type='submit' name='save_theme'>Guardar</button>
-                 </form>";
+        $html = "<div class='admin-form'>
+                    <h2>Editar Tema: $themeName</h2>
+                    $message
+                    <form method='post'>
+                        <label>Contenido CSS:</label>
+                        <textarea name='css_content' class='jocarsa-lightslateblue' rows='20'>" . htmlspecialchars($cssContent) . "</textarea>
+                        <button type='submit' name='save_theme'>Guardar</button>
+                    </form>
+                 </div>";
         renderAdmin($html);
         break;
 
@@ -858,23 +650,10 @@ switch($action) {
             $message = '';
         }
         $configs = $db->query("SELECT * FROM config ORDER BY id ASC");
-        $html = "<header><h1>Configuración del Sitio</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
+        $html = "<h2>Configuración del Sitio</h2>
                  $message
                  <form method='post'>
-                 <table>
+                 <table class='admin-table'>
                  <tr><th>Clave</th><th>Valor</th></tr>";
         while ($row = $configs->fetchArray(SQLITE3_ASSOC)) {
             $key = htmlspecialchars($row['key']);
@@ -896,22 +675,9 @@ switch($action) {
     case 'list_heroes':
         requireLogin();
         $res = $db->query("SELECT * FROM heroes ORDER BY id DESC");
-        $html = "<header><h1>Héroes (Hero Banners)</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
+        $html = "<h2>Héroes (Hero Banners)</h2>
                  <p><a href='admin.php?action=edit_hero'>[+] Agregar Nuevo Hero</a></p>
-                 <table>
+                 <table class='admin-table'>
                     <tr>
                         <th>ID</th>
                         <th>Page Slug</th>
@@ -994,36 +760,24 @@ switch($action) {
         }
 
         // Render form
-        $html = "
-        <header><h1>" . ($id ? "Editar Hero" : "Agregar Hero") . "</h1></header>
-        <nav>
-            <a href='admin.php?action=dashboard'>Inicio</a>
-            <a href='admin.php?action=list_pages'>Páginas</a>
-            <a href='admin.php?action=list_blog'>Blog</a>
-            <a href='admin.php?action=list_themes'>Temas</a>
-            <a href='admin.php?action=edit_theme'>Editar Tema</a>
-            <a href='admin.php?action=list_config'>Configuración</a>
-            <a href='admin.php?action=list_media'>Biblioteca</a>
-            <a href='admin.php?action=list_contact'>Contacto</a>
-            <a href='admin.php?action=list_heroes'>Heroes</a>
-            <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-            <a href='admin.php?action=logout'>Salir</a>
-        </nav>
-        <form method='post'>
-            <label for='page_slug'>Page Slug (ej: 'blog', 'contacto', 'inicio', o el título exacto de la página):</label>
-            <input type='text' name='page_slug' id='page_slug' value='" . htmlspecialchars($heroData['page_slug']) . "' required>
+        $html = "<div class='admin-form'>
+                    <h2>" . ($id ? "Editar Hero" : "Agregar Hero") . "</h2>
+                    <form method='post'>
+                        <label for='page_slug'>Page Slug (ej: 'blog', 'contacto', 'inicio', o el título exacto de la página):</label>
+                        <input type='text' name='page_slug' id='page_slug' value='" . htmlspecialchars($heroData['page_slug']) . "' required>
 
-            <label for='title'>Título:</label>
-            <input type='text' name='title' id='title' value='" . htmlspecialchars($heroData['title']) . "' required>
+                        <label for='title'>Título:</label>
+                        <input type='text' name='title' id='title' value='" . htmlspecialchars($heroData['title']) . "' required>
 
-            <label for='subtitle'>Subtítulo:</label>
-            <input type='text' name='subtitle' id='subtitle' value='" . htmlspecialchars($heroData['subtitle']) . "'>
+                        <label for='subtitle'>Subtítulo:</label>
+                        <input type='text' name='subtitle' id='subtitle' value='" . htmlspecialchars($heroData['subtitle']) . "'>
 
-            <label for='background_image'>URL de la imagen de fondo:</label>
-            <input type='text' name='background_image' id='background_image' value='" . htmlspecialchars($heroData['background_image']) . "'>
+                        <label for='background_image'>URL de la imagen de fondo:</label>
+                        <input type='text' name='background_image' id='background_image' value='" . htmlspecialchars($heroData['background_image']) . "'>
 
-            <button type='submit' name='save_hero'>Guardar</button>
-        </form>";
+                        <button type='submit' name='save_hero'>Guardar</button>
+                    </form>
+                 </div>";
         renderAdmin($html);
         break;
 
@@ -1047,22 +801,9 @@ switch($action) {
     case 'list_social_media':
         requireLogin();
         $res = $db->query("SELECT * FROM social_media ORDER BY id DESC");
-        $html = "<header><h1>Redes Sociales</h1></header>
-                 <nav>
-                     <a href='admin.php?action=dashboard'>Inicio</a>
-                     <a href='admin.php?action=list_pages'>Páginas</a>
-                     <a href='admin.php?action=list_blog'>Blog</a>
-                     <a href='admin.php?action=list_themes'>Temas</a>
-                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
-                     <a href='admin.php?action=list_config'>Configuración</a>
-                     <a href='admin.php?action=list_media'>Biblioteca</a>
-                     <a href='admin.php?action=list_contact'>Contacto</a>
-                     <a href='admin.php?action=list_heroes'>Heroes</a>
-                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-                     <a href='admin.php?action=logout'>Salir</a>
-                 </nav>
+        $html = "<h2>Redes Sociales</h2>
                  <p><a href='admin.php?action=edit_social_media'>[+] Agregar Nuevo Enlace</a></p>
-                 <table>
+                 <table class='admin-table'>
                     <tr>
                         <th>ID</th>
                         <th>Categoría</th>
@@ -1145,36 +886,24 @@ switch($action) {
         }
 
         // Render form
-        $html = "
-        <header><h1>" . ($id ? "Editar Enlace de Red Social" : "Agregar Enlace de Red Social") . "</h1></header>
-        <nav>
-            <a href='admin.php?action=dashboard'>Inicio</a>
-            <a href='admin.php?action=list_pages'>Páginas</a>
-            <a href='admin.php?action=list_blog'>Blog</a>
-            <a href='admin.php?action=list_themes'>Temas</a>
-            <a href='admin.php?action=edit_theme'>Editar Tema</a>
-            <a href='admin.php?action=list_config'>Configuración</a>
-            <a href='admin.php?action=list_media'>Biblioteca</a>
-            <a href='admin.php?action=list_contact'>Contacto</a>
-            <a href='admin.php?action=list_heroes'>Heroes</a>
-            <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-            <a href='admin.php?action=logout'>Salir</a>
-        </nav>
-        <form method='post'>
-            <label for='category'>Categoría:</label>
-            <input type='text' name='category' id='category' value='" . htmlspecialchars($socialMediaData['category']) . "' required>
+        $html = "<div class='admin-form'>
+                    <h2>" . ($id ? "Editar Enlace de Red Social" : "Agregar Enlace de Red Social") . "</h2>
+                    <form method='post'>
+                        <label for='category'>Categoría:</label>
+                        <input type='text' name='category' id='category' value='" . htmlspecialchars($socialMediaData['category']) . "' required>
 
-            <label for='name'>Nombre:</label>
-            <input type='text' name='name' id='name' value='" . htmlspecialchars($socialMediaData['name']) . "' required>
+                        <label for='name'>Nombre:</label>
+                        <input type='text' name='name' id='name' value='" . htmlspecialchars($socialMediaData['name']) . "' required>
 
-            <label for='url'>URL:</label>
-            <input type='text' name='url' id='url' value='" . htmlspecialchars($socialMediaData['url']) . "' required>
+                        <label for='url'>URL:</label>
+                        <input type='text' name='url' id='url' value='" . htmlspecialchars($socialMediaData['url']) . "' required>
 
-            <label for='logo'>Logo URL:</label>
-            <input type='text' name='logo' id='logo' value='" . htmlspecialchars($socialMediaData['logo']) . "' required>
+                        <label for='logo'>Logo URL:</label>
+                        <input type='text' name='logo' id='logo' value='" . htmlspecialchars($socialMediaData['logo']) . "' required>
 
-            <button type='submit' name='save_social_media'>Guardar</button>
-        </form>";
+                        <button type='submit' name='save_social_media'>Guardar</button>
+                    </form>
+                 </div>";
         renderAdmin($html);
         break;
 
@@ -1204,6 +933,4 @@ switch($action) {
         exit();
 }
 ?>
-<link rel="stylesheet" href="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa%20%7C%20lightslateblue.css">
-<script src="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa%20%7C%20lightslateblue.js"></script>
 

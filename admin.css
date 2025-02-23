@@ -1,0 +1,136 @@
+/* admin.css */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f1f1f1;
+    display: flex;
+}
+
+#admin-container {
+    display: flex;
+    width: 100%;
+}
+
+#admin-sidebar {
+    width: 200px;
+    background-color: #32373c;
+    color: #c3c4c7;
+    padding: 20px;
+    position: fixed;
+    height: 100vh;
+}
+
+#admin-sidebar a {
+    color: #c3c4c7;
+    text-decoration: none;
+    display: block;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+#admin-sidebar a:hover {
+    background-color: #464a52;
+    border-radius: 4px;
+}
+
+#admin-content {
+    margin-left: 220px;
+    padding: 20px;
+    width: calc(100% - 220px);
+}
+
+#admin-header {
+    background-color: #32373c;
+    color: #c3c4c7;
+    padding: 20px;
+    text-align: center;
+}
+
+#admin-header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.admin-section {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.admin-section h2 {
+    margin-top: 0;
+}
+
+.admin-form label {
+    display: block;
+    margin-top: 10px;
+}
+
+.admin-form input, .admin-form textarea, .admin-form select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.admin-form button {
+    background-color: #0073aa;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.admin-form button:hover {
+    background-color: #005177;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.admin-table th, .admin-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.admin-table th {
+    background-color: #f1f1f1;
+}
+
+.message {
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+footer {
+    background-color: #32373c;
+    color: #c3c4c7;
+    text-align: center;
+    padding: 10px;
+    position: fixed;
+    bottom: 0;
+    width: calc(100% - 220px);
+    margin-left: 220px;
+}
+
