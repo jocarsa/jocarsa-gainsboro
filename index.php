@@ -33,15 +33,20 @@ $db->exec("CREATE TABLE IF NOT EXISTS contact (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
-// ---------------------------------------------------------------------
-// HERO TABLE (NEW)
-// ---------------------------------------------------------------------
 $db->exec("CREATE TABLE IF NOT EXISTS heroes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     page_slug TEXT UNIQUE NOT NULL,
     title TEXT NOT NULL,
     subtitle TEXT,
     background_image TEXT
+)");
+
+$db->exec("CREATE TABLE IF NOT EXISTS social_media (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    logo TEXT NOT NULL
 )");
 
 // Insert default config values if not exists
@@ -137,7 +142,8 @@ function render(
     $metaDescription,
     $metaTags,
     $metaAuthor,
-    $analyticsUser
+    $analyticsUser,
+    $socialMediaLinks
 ) {
     echo "<!DOCTYPE html>\n";
     echo "<html lang=\"en\">\n";
@@ -163,6 +169,17 @@ function render(
     echo "            $menu\n";
     echo "        </nav>\n";
 
+    // Display social media links in the navigation menu
+    if (!empty($socialMediaLinks)) {
+        echo "<div class='social-media-nav'>\n";
+        foreach ($socialMediaLinks as $link) {
+            echo "<a href='" . htmlspecialchars($link['url']) . "' target='_blank'>
+                    <img src='" . htmlspecialchars($link['logo']) . "' alt='" . htmlspecialchars($link['name']) . "'>
+                  </a>\n";
+        }
+        echo "</div>\n";
+    }
+
     // Place hero here (if any)
     if (!empty($hero)) {
         echo $hero;
@@ -176,6 +193,17 @@ function render(
     echo "        <footer>\n";
     echo "            &copy; " . date('Y') . " <img src=\"$footerImage\" alt=\"Footer Logo\"> $title\n";
     echo "        </footer>\n";
+
+    // Display social media links in the footer
+    if (!empty($socialMediaLinks)) {
+        echo "<div class='social-media-footer'>\n";
+        foreach ($socialMediaLinks as $link) {
+            echo "<a href='" . htmlspecialchars($link['url']) . "' target='_blank'>
+                    <img src='" . htmlspecialchars($link['logo']) . "' alt='" . htmlspecialchars($link['name']) . "'>
+                  </a>\n";
+        }
+        echo "</div>\n";
+    }
 
     // Insert the analytics script with user param
     echo "        <script src=\"https://ghostwhite.jocarsa.com/analytics.js?user=$analyticsUser\"></script>\n";
@@ -198,6 +226,13 @@ $menu .= " | <a href='?page=contacto'>Contacto</a>";
 // ---------------------------------------------------------------------
 $page = $_GET['page'] ?? 'inicio';
 
+// Fetch social media links from the database
+$socialMediaResult = $db->query("SELECT name, url, logo FROM social_media");
+$socialMediaLinks = [];
+while ($row = $socialMediaResult->fetchArray(SQLITE3_ASSOC)) {
+    $socialMediaLinks[] = $row;
+}
+
 if ($page === 'blog') {
     // BLOG
     $result = $db->query("SELECT title, content, created_at FROM blog ORDER BY created_at DESC");
@@ -212,7 +247,7 @@ if ($page === 'blog') {
     // fetch hero for "blog"
     $heroSection = fetchHeroSection($db, 'blog');
 
-    render($heroSection, $blogContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
+    render($heroSection, $blogContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks);
 
 } elseif ($page === 'contacto') {
     // CONTACT
@@ -258,7 +293,7 @@ if ($page === 'blog') {
     // fetch hero for "contacto"
     $heroSection = fetchHeroSection($db, 'contacto');
 
-    render($heroSection, $contactContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
+    render($heroSection, $contactContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks);
 
 } else {
     // SPECIFIC PAGE
@@ -272,9 +307,9 @@ if ($page === 'blog') {
         // fetch hero for the given $page
         $heroSection = fetchHeroSection($db, $page);
 
-        render($heroSection, $pageContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
+        render($heroSection, $pageContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks);
     } else {
-        render('', "<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser);
+        render('', "<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks);
     }
 }
 

@@ -47,15 +47,20 @@ $db->exec("CREATE TABLE IF NOT EXISTS media (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
-// ---------------------------------------------------------------------
-// HEROES TABLE (FOR HERO BANNERS)
-// ---------------------------------------------------------------------
 $db->exec("CREATE TABLE IF NOT EXISTS heroes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     page_slug TEXT UNIQUE NOT NULL,
     title TEXT NOT NULL,
     subtitle TEXT,
     background_image TEXT
+)");
+
+$db->exec("CREATE TABLE IF NOT EXISTS social_media (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    logo TEXT NOT NULL
 )");
 
 // Insert default config values if they don't exist, including the new analytics_user key
@@ -69,6 +74,27 @@ $db->exec("
         ('active_theme', 'gainsboro'),
         ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg'),
         ('analytics_user', 'defaultUser')
+");
+
+// Insert default social media links with empty URLs
+$db->exec("
+    INSERT OR IGNORE INTO social_media (category, name, url, logo) VALUES
+        ('Generalistas', 'Facebook', '', 'facebook.png'),
+        ('Generalistas', 'Instagram', '', 'instagram.png'),
+        ('Generalistas', 'Twitter (X)', '', 'twitter.png'),
+        ('Generalistas', 'TikTok', '', 'tiktok.png'),
+        ('Generalistas', 'Snapchat', '', 'snapchat.png'),
+        ('Profesionales y negocios', 'LinkedIn', '', 'linkedin.png'),
+        ('Profesionales y negocios', 'Pinterest', '', 'pinterest.png'),
+        ('Profesionales y negocios', 'GitHub', '', 'github.png'),
+        ('Mensajería instantánea', 'WhatsApp', '', 'whatsapp.png'),
+        ('Mensajería instantánea', 'Telegram', '', 'telegram.png'),
+        ('Mensajería instantánea', 'Discord', '', 'discord.png'),
+        ('Streaming y video', 'YouTube', '', 'youtube.png'),
+        ('Streaming y video', 'Twitch', '', 'twitch.png'),
+        ('Redes sociales emergentes o de nicho', 'Threads', '', 'threads.png'),
+        ('Redes sociales emergentes o de nicho', 'Mastodon', '', 'mastodon.png'),
+        ('Redes sociales emergentes o de nicho', 'BeReal', '', 'bereal.png')
 ");
 
 // -----------------------------------------------------------
@@ -307,6 +333,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <p>Bienvenido al panel de administración.</p>";
@@ -329,6 +356,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <table>
@@ -378,6 +406,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <table>
@@ -407,6 +436,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <p><a href='admin.php?action=upload_media'>[+] Subir Nuevo Archivo</a></p>
@@ -479,6 +509,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  $message
@@ -529,6 +560,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <p><a href='admin.php?action=edit_page'>[+] Agregar Nueva Página</a></p>
@@ -589,6 +621,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <form method='post'>
@@ -630,6 +663,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <p><a href='admin.php?action=edit_blog'>[+] Agregar Nueva Entrada</a></p>
@@ -691,6 +725,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <form method='post'>
@@ -733,6 +768,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>";
         if (empty($themes)) {
@@ -794,6 +830,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  $message
@@ -832,6 +869,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  $message
@@ -869,6 +907,7 @@ switch($action) {
                      <a href='admin.php?action=list_media'>Biblioteca</a>
                      <a href='admin.php?action=list_contact'>Contacto</a>
                      <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
                      <a href='admin.php?action=logout'>Salir</a>
                  </nav>
                  <p><a href='admin.php?action=edit_hero'>[+] Agregar Nuevo Hero</a></p>
@@ -967,6 +1006,7 @@ switch($action) {
             <a href='admin.php?action=list_media'>Biblioteca</a>
             <a href='admin.php?action=list_contact'>Contacto</a>
             <a href='admin.php?action=list_heroes'>Heroes</a>
+            <a href='admin.php?action=list_social_media'>Redes Sociales</a>
             <a href='admin.php?action=logout'>Salir</a>
         </nav>
         <form method='post'>
@@ -999,6 +1039,157 @@ switch($action) {
             $st->execute();
         }
         header('Location: admin.php?action=list_heroes');
+        exit();
+
+    // -----------------------------------------------------------
+    // SOCIAL MEDIA: LIST
+    // -----------------------------------------------------------
+    case 'list_social_media':
+        requireLogin();
+        $res = $db->query("SELECT * FROM social_media ORDER BY id DESC");
+        $html = "<header><h1>Redes Sociales</h1></header>
+                 <nav>
+                     <a href='admin.php?action=dashboard'>Inicio</a>
+                     <a href='admin.php?action=list_pages'>Páginas</a>
+                     <a href='admin.php?action=list_blog'>Blog</a>
+                     <a href='admin.php?action=list_themes'>Temas</a>
+                     <a href='admin.php?action=edit_theme'>Editar Tema</a>
+                     <a href='admin.php?action=list_config'>Configuración</a>
+                     <a href='admin.php?action=list_media'>Biblioteca</a>
+                     <a href='admin.php?action=list_contact'>Contacto</a>
+                     <a href='admin.php?action=list_heroes'>Heroes</a>
+                     <a href='admin.php?action=list_social_media'>Redes Sociales</a>
+                     <a href='admin.php?action=logout'>Salir</a>
+                 </nav>
+                 <p><a href='admin.php?action=edit_social_media'>[+] Agregar Nuevo Enlace</a></p>
+                 <table>
+                    <tr>
+                        <th>ID</th>
+                        <th>Categoría</th>
+                        <th>Nombre</th>
+                        <th>URL</th>
+                        <th>Logo</th>
+                        <th>Acciones</th>
+                    </tr>";
+        while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
+            $html .= "<tr>
+                        <td>{$row['id']}</td>
+                        <td>" . htmlspecialchars($row['category']) . "</td>
+                        <td>" . htmlspecialchars($row['name']) . "</td>
+                        <td>" . htmlspecialchars($row['url']) . "</td>
+                        <td><img src='" . htmlspecialchars($row['logo']) . "' alt='" . htmlspecialchars($row['name']) . "' style='max-width:50px;'></td>
+                        <td>
+                          <a href='admin.php?action=edit_social_media&id={$row['id']}'>Editar</a> |
+                          <a href='admin.php?action=delete_social_media&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
+                        </td>
+                      </tr>";
+        }
+        $html .= "</table>";
+        renderAdmin($html);
+        break;
+
+    // -----------------------------------------------------------
+    // SOCIAL MEDIA: EDIT (Add / Update)
+    // -----------------------------------------------------------
+    case 'edit_social_media':
+        requireLogin();
+        $id = $_GET['id'] ?? null;
+        $socialMediaData = [
+            'id' => '',
+            'category' => '',
+            'name' => '',
+            'url' => '',
+            'logo' => ''
+        ];
+
+        // Fetch existing if editing
+        if ($id) {
+            $stmt = $db->prepare("SELECT * FROM social_media WHERE id = :id");
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $res = $stmt->execute();
+            $found = $res->fetchArray(SQLITE3_ASSOC);
+            if ($found) {
+                $socialMediaData = $found;
+            }
+        }
+
+        // Handle form submission
+        if (isset($_POST['save_social_media'])) {
+            $category = trim($_POST['category']);
+            $name = trim($_POST['name']);
+            $url = trim($_POST['url']);
+            $logo = trim($_POST['logo']);
+
+            if ($id) {
+                // Update existing
+                $st = $db->prepare("UPDATE social_media
+                                    SET category = :category,
+                                        name = :name,
+                                        url = :url,
+                                        logo = :logo
+                                    WHERE id = :id");
+                $st->bindValue(':id', $id, SQLITE3_INTEGER);
+            } else {
+                // Insert new
+                $st = $db->prepare("INSERT INTO social_media (category, name, url, logo)
+                                    VALUES (:category, :name, :url, :logo)");
+            }
+            $st->bindValue(':category', $category, SQLITE3_TEXT);
+            $st->bindValue(':name', $name, SQLITE3_TEXT);
+            $st->bindValue(':url', $url, SQLITE3_TEXT);
+            $st->bindValue(':logo', $logo, SQLITE3_TEXT);
+            $st->execute();
+
+            header('Location: admin.php?action=list_social_media');
+            exit();
+        }
+
+        // Render form
+        $html = "
+        <header><h1>" . ($id ? "Editar Enlace de Red Social" : "Agregar Enlace de Red Social") . "</h1></header>
+        <nav>
+            <a href='admin.php?action=dashboard'>Inicio</a>
+            <a href='admin.php?action=list_pages'>Páginas</a>
+            <a href='admin.php?action=list_blog'>Blog</a>
+            <a href='admin.php?action=list_themes'>Temas</a>
+            <a href='admin.php?action=edit_theme'>Editar Tema</a>
+            <a href='admin.php?action=list_config'>Configuración</a>
+            <a href='admin.php?action=list_media'>Biblioteca</a>
+            <a href='admin.php?action=list_contact'>Contacto</a>
+            <a href='admin.php?action=list_heroes'>Heroes</a>
+            <a href='admin.php?action=list_social_media'>Redes Sociales</a>
+            <a href='admin.php?action=logout'>Salir</a>
+        </nav>
+        <form method='post'>
+            <label for='category'>Categoría:</label>
+            <input type='text' name='category' id='category' value='" . htmlspecialchars($socialMediaData['category']) . "' required>
+
+            <label for='name'>Nombre:</label>
+            <input type='text' name='name' id='name' value='" . htmlspecialchars($socialMediaData['name']) . "' required>
+
+            <label for='url'>URL:</label>
+            <input type='text' name='url' id='url' value='" . htmlspecialchars($socialMediaData['url']) . "' required>
+
+            <label for='logo'>Logo URL:</label>
+            <input type='text' name='logo' id='logo' value='" . htmlspecialchars($socialMediaData['logo']) . "' required>
+
+            <button type='submit' name='save_social_media'>Guardar</button>
+        </form>";
+        renderAdmin($html);
+        break;
+
+    // -----------------------------------------------------------
+    // SOCIAL MEDIA: DELETE
+    // -----------------------------------------------------------
+    case 'delete_social_media':
+        requireLogin();
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            $st = $db->prepare("DELETE FROM social_media WHERE id = :id");
+            $st->bindValue(':id', $id, SQLITE3_INTEGER);
+            $st->execute();
+        }
+        header('Location: admin.php?action=list_social_media');
         exit();
 
     // -----------------------------------------------------------
