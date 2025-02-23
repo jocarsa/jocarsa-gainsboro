@@ -227,7 +227,7 @@ $menu .= " | <a href='?page=contacto'>Contacto</a>";
 $page = $_GET['page'] ?? 'inicio';
 
 // Fetch social media links from the database
-$socialMediaResult = $db->query("SELECT name, url, logo FROM social_media");
+$socialMediaResult = $db->query("SELECT name, url, logo FROM social_media WHERE url != ''");
 $socialMediaLinks = [];
 while ($row = $socialMediaResult->fetchArray(SQLITE3_ASSOC)) {
     $socialMediaLinks[] = $row;
