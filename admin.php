@@ -98,10 +98,13 @@ $defaultSocialMedia = [
 
 foreach ($defaultSocialMedia as $item) {
     list($category, $name, $logo) = $item;
-    $db->exec("
-        INSERT OR IGNORE INTO social_media (category, name, url, logo)
-        VALUES ('$category', '$name', '', '$logo')
-    ");
+    $existing = $db->querySingle("SELECT COUNT(*) FROM social_media WHERE name = '$name'");
+    if ($existing == 0) {
+        $db->exec("
+            INSERT INTO social_media (category, name, url, logo)
+            VALUES ('$category', '$name', '', '$logo')
+        ");
+    }
 }
 
 // -----------------------------------------------------------
@@ -225,7 +228,7 @@ if (!isLoggedIn() && $action !== 'login') {
 // -----------------------------------------------------------
 // SWITCH ACTIONS
 // -----------------------------------------------------------
-switch($action) {
+switch ($action) {
 
     // -----------------------------------------------------------
     // LOGIN PAGE
@@ -353,7 +356,7 @@ switch($action) {
                     mkdir($targetDir, 0777, true);
                 }
                 // Create unique name
-                $uniqueName = time() . '-' . preg_replace('/[^a-zA-Z0-9._-]/','', $fileName);
+                $uniqueName = time() . '-' . preg_replace('/[^a-zA-Z0-9._-]/', '', $fileName);
                 $targetPath = $targetDir . $uniqueName;
                 if (move_uploaded_file($tmpName, $targetPath)) {
                     // Save in DB
@@ -682,7 +685,7 @@ switch($action) {
                         <th>ID</th>
                         <th>Page Slug</th>
                         <th>Título</th>
-                        <th>Subtitle</th>
+                        <th>Subtítulo</th>
                         <th>Background Image</th>
                         <th>Acciones</th>
                     </tr>";
