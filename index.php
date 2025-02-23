@@ -167,18 +167,17 @@ function render(
     echo "        </header>\n";
     echo "        <nav>\n";
     echo "            $menu\n";
-    echo "        </nav>\n";
 
     // Display social media links in the navigation menu
     if (!empty($socialMediaLinks)) {
-        echo "<div class='social-media-nav'>\n";
         foreach ($socialMediaLinks as $link) {
             echo "<a href='" . htmlspecialchars($link['url']) . "' target='_blank'>
                     <img src='" . htmlspecialchars($link['logo']) . "' alt='" . htmlspecialchars($link['name']) . "'>
                   </a>\n";
         }
-        echo "</div>\n";
     }
+
+    echo "        </nav>\n";
 
     // Place hero here (if any)
     if (!empty($hero)) {
