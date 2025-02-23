@@ -172,7 +172,7 @@ function render(
     if (!empty($socialMediaLinks)) {
         foreach ($socialMediaLinks as $link) {
             echo "<a href='" . htmlspecialchars($link['url']) . "' target='_blank'>
-                    <img src='" . htmlspecialchars($link['logo']) . "' alt='" . htmlspecialchars($link['name']) . "'>
+                    <img src='img/" . htmlspecialchars($link['logo']) . "' alt='" . htmlspecialchars($link['name']) . "' target='_blank'>
                   </a>\n";
         }
     }
