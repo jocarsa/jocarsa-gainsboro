@@ -190,9 +190,9 @@ function renderAdmin($content, $showNav = true) {
         </div>";
 
     if ($showNav) {
-        echo "<footer>
+       /* echo "<footer>
             &copy; " . date('Y') . " jocarsa | gainsboro
-        </footer>";
+        </footer>";*/
     }
 
     echo "</div>

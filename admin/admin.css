@@ -86,12 +86,13 @@ body {
     margin-top: 10px;
 }
 
-.admin-form input, .admin-form textarea, .admin-form select {
+.admin-form input, .admin-form textarea, .admin-form select,.admin-table input {
     width: 100%;
     padding: 8px;
     margin-top: 5px;
     border: 1px solid #ccc;
     border-radius: 4px;
+    box-sizing:border-box;
 }
 
 .admin-form button {
@@ -147,8 +148,8 @@ footer {
     padding: 10px;
     position: fixed;
     bottom: 0;
-    width: calc(100% - 220px);
-    margin-left: 220px;
+    width: 100%;
+   
 }
 .active{
 	background:#f1f1f1;
