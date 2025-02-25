@@ -141,12 +141,17 @@ function accionActual($accion1, $accion2) {
 }
 
 function renderAdmin($content, $showNav = true) {
+    $excludedActions = ['edit_theme', 'edit_custom_css'];
+    $currentAction = $_GET['action'] ?? '';
+    $useCustomClass = !in_array($currentAction, $excludedActions);
+
     echo "<!DOCTYPE html>
 <html>
 <head>
     <meta charset='utf-8'>
     <title>jocarsa | gainsboro</title>
     <link rel='stylesheet' href='admin.css'>
+    " . ($useCustomClass ? "<link rel='stylesheet' href='https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa%20%7C%20lightslateblue.css'>" : "") . "
 </head>
 <body>
 <div id='admin-container'>";
@@ -646,7 +651,7 @@ switch ($action) {
                     $message
                     <form method='post'>
                         <label>Contenido CSS:</label>
-                        <textarea name='css_content' class='jocarsa-lightslateblue' rows='20'>" . htmlspecialchars($cssContent) . "</textarea>
+                        <textarea name='css_content' rows='20'>" . htmlspecialchars($cssContent) . "</textarea>
                         <button type='submit' name='save_theme'>Guardar</button>
                     </form>
                  </div>";
@@ -999,7 +1004,7 @@ switch ($action) {
                         <label>Title:</label>
                         <input type='text' name='title' value='" . htmlspecialchars($cssData['title']) . "' required>
                         <label>CSS Content:</label>
-                        <textarea name='content' rows='10' class='jocarsa-lightslateblue'>" . htmlspecialchars($cssData['content']) . "</textarea>
+                        <textarea name='content' rows='10'>" . htmlspecialchars($cssData['content']) . "</textarea>
                         <button type='submit' name='save_custom_css'>Save</button>
                     </form>
                  </div>";
