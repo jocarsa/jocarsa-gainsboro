@@ -2,22 +2,19 @@
 session_start();
 require_once 'config.php';
 
-// Demo credentials (change these as needed)
-define('ADMIN_USER', 'jocarsa');
-define('ADMIN_PASS', 'jocarsa');
-
-// Connect to the database
+// ---------------------------------------------------------------------
+// Database Connection & Table Creation
+// ---------------------------------------------------------------------
 $db = new SQLite3($dbPath);
 
-// ---------------------------------------------------------------------
-// Create all needed tables if not exist
-// ---------------------------------------------------------------------
+// Create pages table
 $db->exec("CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT UNIQUE NOT NULL,
     content TEXT NOT NULL
 )");
 
+// Create blog table
 $db->exec("CREATE TABLE IF NOT EXISTS blog (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
@@ -25,12 +22,14 @@ $db->exec("CREATE TABLE IF NOT EXISTS blog (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
+// Create config table
 $db->exec("CREATE TABLE IF NOT EXISTS config (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT UNIQUE NOT NULL,
     value TEXT NOT NULL
 )");
 
+// Create contact table
 $db->exec("CREATE TABLE IF NOT EXISTS contact (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -40,6 +39,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS contact (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
+// Create media table
 $db->exec("CREATE TABLE IF NOT EXISTS media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     filename TEXT NOT NULL,
@@ -47,6 +47,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS media (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
+// Create heroes table
 $db->exec("CREATE TABLE IF NOT EXISTS heroes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     page_slug TEXT UNIQUE NOT NULL,
@@ -55,6 +56,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS heroes (
     background_image TEXT
 )");
 
+// Create social_media table
 $db->exec("CREATE TABLE IF NOT EXISTS social_media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     category TEXT NOT NULL,
@@ -62,6 +64,23 @@ $db->exec("CREATE TABLE IF NOT EXISTS social_media (
     url TEXT NOT NULL,
     logo TEXT NOT NULL
 )");
+
+// -------------------------------
+// New: Create admins table
+// -------------------------------
+$db->exec("CREATE TABLE IF NOT EXISTS admins (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL
+)");
+
+// Insert default admin if not exists
+$db->exec("
+    INSERT OR IGNORE INTO admins (name, email, username, password)
+    VALUES ('Jose Vicente Carratala', 'info@josevicentecarratala.com', 'jocarsa', 'jocarsa')
+");
 
 // Insert default config values if they don't exist, including the new analytics_user key
 $db->exec("
@@ -75,6 +94,15 @@ $db->exec("
         ('footer_image', 'https://jocarsa.com/static/logo/footer-logo.svg'),
         ('analytics_user', 'defaultUser')
 ");
+
+// Create custom_css table for additional CSS rulesets
+$db->exec("CREATE TABLE IF NOT EXISTS custom_css (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    active INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)");
 
 // Insert default social media links only if they don't exist
 $defaultSocialMedia = [
@@ -107,18 +135,22 @@ foreach ($defaultSocialMedia as $item) {
     }
 }
 
-// -----------------------------------------------------------
+// ---------------------------------------------------------------------
 // Helper Functions
-// -----------------------------------------------------------
+// ---------------------------------------------------------------------
 function isLoggedIn() {
     return (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true);
 }
 
 function requireLogin() {
     if (!isLoggedIn()) {
-        header('Location: admin.php');
+        header('Location: ?action=login');
         exit();
     }
+}
+
+function accionActual($accion1, $accion2) {
+    return ($accion1 == $accion2) ? ' class="active" ' : '';
 }
 
 function renderAdmin($content) {
@@ -126,29 +158,38 @@ function renderAdmin($content) {
 <html>
 <head>
     <meta charset='utf-8'>
-    <title>Panel de Administración</title>
+    <title>jocarsa | gainsboro</title>
     <link rel='stylesheet' href='admin.css'>
 </head>
 <body>
 <div id='admin-container'>
     <div id='admin-sidebar'>
         <nav>
-            <a href='admin.php?action=dashboard'>Inicio</a>
-            <a href='admin.php?action=list_pages'>Páginas</a>
-            <a href='admin.php?action=list_blog'>Blog</a>
-            <a href='admin.php?action=list_themes'>Temas</a>
-            <a href='admin.php?action=edit_theme'>Editar Tema</a>
-            <a href='admin.php?action=list_config'>Configuración</a>
-            <a href='admin.php?action=list_media'>Biblioteca</a>
-            <a href='admin.php?action=list_contact'>Contacto</a>
-            <a href='admin.php?action=list_heroes'>Heroes</a>
-            <a href='admin.php?action=list_social_media'>Redes Sociales</a>
-            <a href='admin.php?action=logout'>Salir</a>
+            <a href='?action=dashboard'" . accionActual($_GET['action'] ?? '', "dashboard") . ">Inicio</a>
+            <hr>
+            <a href='?action=list_pages'" . accionActual($_GET['action'] ?? '', "list_pages") . ">Páginas</a>
+            <a href='?action=list_blog'" . accionActual($_GET['action'] ?? '', "list_blog") . ">Blog</a>
+            <a href='?action=list_media'" . accionActual($_GET['action'] ?? '', "list_media") . ">Biblioteca</a>
+            <a href='?action=list_heroes'" . accionActual($_GET['action'] ?? '', "list_heroes") . ">Heroes</a>
+            <a href='?action=list_social_media'" . accionActual($_GET['action'] ?? '', "list_social_media") . ">Redes Sociales</a>
+            <hr>
+            <a href='?action=list_themes'" . accionActual($_GET['action'] ?? '', "list_themes") . ">Temas</a>
+            <a href='?action=edit_theme'" . accionActual($_GET['action'] ?? '', "edit_theme") . ">Editar Tema</a>
+            <a href='?action=list_custom_css'" . accionActual($_GET['action'] ?? '', "list_custom_css") . ">CSS personalizado</a>
+            <hr>
+            <a href='?action=list_contact'" . accionActual($_GET['action'] ?? '', "list_contact") . ">Contacto</a>
+            <hr>
+            <a href='?action=list_admins'" . accionActual($_GET['action'] ?? '', "list_admins") . ">Administradores</a>
+            <a href='?action=list_config'" . accionActual($_GET['action'] ?? '', "list_config") . ">Configuración</a>
+            
+            <hr>
+            <a href='?action=logout'" . accionActual($_GET['action'] ?? '', "logout") . ">Salir</a>
         </nav>
     </div>
     <div id='admin-content'>
         <div id='admin-header'>
-            <h1>Panel de Administración</h1>
+            <img src='gainsboro.png'>
+            <h1>jocarsa | gainsboro</h1>
         </div>
         <div class='admin-section'>
             $content
@@ -156,7 +197,7 @@ function renderAdmin($content) {
     </div>
 </div>
 <footer>
-    &copy; " . date('Y') . " jocarsa Admin Panel
+    &copy; " . date('Y') . " jocarsa | gainsboro
 </footer>
 </body>
 </html>";
@@ -172,7 +213,7 @@ function getAllMedia($db) {
 }
 
 function getAvailableThemes() {
-    $themeFiles = glob(__DIR__ . '/css/*.css');
+    $themeFiles = glob('../css/*.css');
     $themes = [];
     if ($themeFiles !== false) {
         foreach ($themeFiles as $filePath) {
@@ -188,30 +229,31 @@ function setActiveTheme($db, $themeName) {
     $st->execute();
 }
 
-// -----------------------------------------------------------
-// Routing
-// -----------------------------------------------------------
+// ---------------------------------------------------------------------
+// Routing & Login Handling
+// ---------------------------------------------------------------------
 $action = $_GET['action'] ?? 'login';
 $message = '';
 
-// -----------------------------------------------------------
 // LOGOUT
-// -----------------------------------------------------------
 if ($action === 'logout') {
     session_destroy();
-    header('Location: admin.php');
+    header('Location: ?action=login');
     exit();
 }
 
-// -----------------------------------------------------------
-// PROCESS LOGIN
-// -----------------------------------------------------------
+// PROCESS LOGIN using the admins table
 if ($action === 'do_login') {
     $user = $_POST['username'] ?? '';
     $pass = $_POST['password'] ?? '';
-    if ($user === ADMIN_USER && $pass === ADMIN_PASS) {
+    $stmt = $db->prepare("SELECT * FROM admins WHERE username = :username");
+    $stmt->bindValue(':username', $user, SQLITE3_TEXT);
+    $res = $stmt->execute();
+    $admin = $res->fetchArray(SQLITE3_ASSOC);
+    if ($admin && $admin['password'] === $pass) {
         $_SESSION['logged_in'] = true;
-        header('Location: admin.php?action=dashboard');
+        $_SESSION['admin_id'] = $admin['id'];
+        header('Location: ?action=dashboard');
         exit();
     } else {
         $message = "<p class='danger'>Credenciales inválidas</p>";
@@ -219,25 +261,23 @@ if ($action === 'do_login') {
     }
 }
 
-// If user not logged in, force login (except action=login)
+// If user not logged in, force login (except for login action)
 if (!isLoggedIn() && $action !== 'login') {
-    header('Location: admin.php?action=login');
+    header('Location: ?action=login');
     exit();
 }
 
-// -----------------------------------------------------------
+// ---------------------------------------------------------------------
 // SWITCH ACTIONS
-// -----------------------------------------------------------
+// ---------------------------------------------------------------------
 switch ($action) {
 
-    // -----------------------------------------------------------
     // LOGIN PAGE
-    // -----------------------------------------------------------
     case 'login':
         $html = "<div class='admin-form'>
                     <h2>Acceso al Panel</h2>
                     $message
-                    <form method='post' action='admin.php?action=do_login'>
+                    <form method='post' action='?action=do_login'>
                         <label>Usuario:</label>
                         <input type='text' name='username' required>
                         <label>Contraseña:</label>
@@ -248,21 +288,17 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // DASHBOARD
-    // -----------------------------------------------------------
     case 'dashboard':
         $html = "<h2>Bienvenido al panel de administración.</h2>";
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // CONTACT: LIST
-    // -----------------------------------------------------------
     case 'list_contact':
         $res = $db->query("SELECT * FROM contact ORDER BY id DESC");
         $html = "<h2>Contacto</h2>
-                 <p><a href='admin.php?action=view_contact'>Ver Mensajes</a></p>
+                 <p><a href='?action=view_contact'>Ver Mensajes</a></p>
                  <table class='admin-table'>
                    <tr>
                      <th>ID</th>
@@ -279,16 +315,14 @@ switch ($action) {
                         <td>" . htmlspecialchars($row['email']) . "</td>
                         <td>" . htmlspecialchars($row['subject']) . "</td>
                         <td>" . htmlspecialchars($row['created_at']) . "</td>
-                        <td><a href='admin.php?action=view_contact&id={$row['id']}'>Ver</a></td>
+                        <td><a href='?action=view_contact&id={$row['id']}'>Ver</a></td>
                       </tr>";
         }
         $html .= "</table>";
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // CONTACT: VIEW A MESSAGE
-    // -----------------------------------------------------------
     case 'view_contact':
         $id = $_GET['id'] ?? 0;
         $stmt = $db->prepare("SELECT * FROM contact WHERE id = :id");
@@ -296,7 +330,7 @@ switch ($action) {
         $res = $stmt->execute();
         $messageData = $res->fetchArray(SQLITE3_ASSOC);
         if (!$messageData) {
-            header('Location: admin.php?action=list_contact');
+            header('Location: ?action=list_contact');
             exit();
         }
         $html = "<h2>Ver Mensaje</h2>
@@ -311,13 +345,11 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // MEDIA LIBRARY: LIST
-    // -----------------------------------------------------------
     case 'list_media':
         $mediaItems = getAllMedia($db);
         $html = "<h2>Biblioteca</h2>
-                 <p><a href='admin.php?action=upload_media'>[+] Subir Nuevo Archivo</a></p>
+                 <p><a href='?action=upload_media'>[+] Subir Nuevo Archivo</a></p>
                  <table class='admin-table'>
                    <tr>
                      <th>ID</th>
@@ -335,7 +367,7 @@ switch ($action) {
                         <td>" . htmlspecialchars($m['created_at']) . "</td>
                         <td><img src='{$m['filepath']}' alt='' style='max-width:100px;'></td>
                         <td>
-                           <a href='admin.php?action=delete_media&id={$m['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
+                           <a href='?action=delete_media&id={$m['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
         }
@@ -343,9 +375,7 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // MEDIA LIBRARY: UPLOAD
-    // -----------------------------------------------------------
     case 'upload_media':
         if (isset($_POST['upload'])) {
             if (!empty($_FILES['file']['name'])) {
@@ -365,7 +395,7 @@ switch ($action) {
                     $stmt->bindValue(':fn', $fileName, SQLITE3_TEXT);
                     $stmt->bindValue(':fp', $dbFilePath, SQLITE3_TEXT);
                     $stmt->execute();
-                    header('Location: admin.php?action=list_media');
+                    header('Location: ?action=list_media');
                     exit();
                 } else {
                     $message = "<p class='danger'>Error al mover el archivo subido.</p>";
@@ -388,9 +418,7 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // MEDIA LIBRARY: DELETE
-    // -----------------------------------------------------------
     case 'delete_media':
         $id = $_GET['id'] ?? null;
         if ($id) {
@@ -408,16 +436,14 @@ switch ($action) {
                 $st2->execute();
             }
         }
-        header('Location: admin.php?action=list_media');
+        header('Location: ?action=list_media');
         exit();
 
-    // -----------------------------------------------------------
     // PAGES: LIST
-    // -----------------------------------------------------------
     case 'list_pages':
         $res = $db->query("SELECT * FROM pages ORDER BY id DESC");
         $html = "<h2>Páginas</h2>
-                 <p><a href='admin.php?action=edit_page'>[+] Agregar Nueva Página</a></p>
+                 <p><a href='?action=edit_page'>[+] Agregar Nueva Página</a></p>
                  <table class='admin-table'>
                     <tr><th>ID</th><th>Título</th><th>Acciones</th></tr>";
         while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
@@ -425,8 +451,8 @@ switch ($action) {
                         <td>{$row['id']}</td>
                         <td>" . htmlspecialchars($row['title']) . "</td>
                         <td>
-                            <a href='admin.php?action=edit_page&id={$row['id']}'>Editar</a> |
-                            <a href='admin.php?action=delete_page&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
+                            <a href='?action=edit_page&id={$row['id']}'>Editar</a> |
+                            <a href='?action=delete_page&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
         }
@@ -434,9 +460,7 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // PAGES: EDIT / ADD
-    // -----------------------------------------------------------
     case 'edit_page':
         $id = $_GET['id'] ?? null;
         $pageData = ['id' => '', 'title' => '', 'content' => ''];
@@ -461,7 +485,7 @@ switch ($action) {
             $st->bindValue(':title', $title, SQLITE3_TEXT);
             $st->bindValue(':content', $content, SQLITE3_TEXT);
             $st->execute();
-            header('Location: admin.php?action=list_pages');
+            header('Location: ?action=list_pages');
             exit();
         }
         $html = "<div class='admin-form'>
@@ -477,9 +501,7 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // PAGES: DELETE
-    // -----------------------------------------------------------
     case 'delete_page':
         $id = $_GET['id'] ?? null;
         if ($id) {
@@ -487,16 +509,14 @@ switch ($action) {
             $st->bindValue(':id', $id, SQLITE3_INTEGER);
             $st->execute();
         }
-        header('Location: admin.php?action=list_pages');
+        header('Location: ?action=list_pages');
         exit();
 
-    // -----------------------------------------------------------
     // BLOG: LIST
-    // -----------------------------------------------------------
     case 'list_blog':
         $res = $db->query("SELECT * FROM blog ORDER BY id DESC");
         $html = "<h2>Entradas del Blog</h2>
-                 <p><a href='admin.php?action=edit_blog'>[+] Agregar Nueva Entrada</a></p>
+                 <p><a href='?action=edit_blog'>[+] Agregar Nueva Entrada</a></p>
                  <table class='admin-table'>
                     <tr><th>ID</th><th>Título</th><th>Fecha</th><th>Acciones</th></tr>";
         while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
@@ -505,8 +525,8 @@ switch ($action) {
                         <td>" . htmlspecialchars($row['title']) . "</td>
                         <td>" . htmlspecialchars($row['created_at']) . "</td>
                         <td>
-                            <a href='admin.php?action=edit_blog&id={$row['id']}'>Editar</a> |
-                            <a href='admin.php?action=delete_blog&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
+                            <a href='?action=edit_blog&id={$row['id']}'>Editar</a> |
+                            <a href='?action=delete_blog&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
         }
@@ -514,9 +534,7 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // BLOG: EDIT / ADD
-    // -----------------------------------------------------------
     case 'edit_blog':
         $id = $_GET['id'] ?? null;
         $blogData = ['id' => '', 'title' => '', 'content' => '', 'created_at' => ''];
@@ -541,7 +559,7 @@ switch ($action) {
             $st->bindValue(':title', $title, SQLITE3_TEXT);
             $st->bindValue(':content', $content, SQLITE3_TEXT);
             $st->execute();
-            header('Location: admin.php?action=list_blog');
+            header('Location: ?action=list_blog');
             exit();
         }
         $html = "<div class='admin-form'>
@@ -557,9 +575,7 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // BLOG: DELETE
-    // -----------------------------------------------------------
     case 'delete_blog':
         $id = $_GET['id'] ?? null;
         if ($id) {
@@ -567,12 +583,10 @@ switch ($action) {
             $st->bindValue(':id', $id, SQLITE3_INTEGER);
             $st->execute();
         }
-        header('Location: admin.php?action=list_blog');
+        header('Location: ?action=list_blog');
         exit();
 
-    // -----------------------------------------------------------
     // THEMES: LIST & ACTIVATE
-    // -----------------------------------------------------------
     case 'list_themes':
         $themes = getAvailableThemes();
         $activeTheme = $db->querySingle("SELECT value FROM config WHERE key='active_theme'");
@@ -591,7 +605,7 @@ switch ($action) {
                         <td>$isActive</td>
                         <td>";
             if ($isActive === 'No') {
-                $html .= "<a href='admin.php?action=activate_theme&theme=$tName'>Activar</a>";
+                $html .= "<a href='?action=activate_theme&theme=$tName'>Activar</a>";
             } else {
                 $html .= "Ya Está Activo";
             }
@@ -608,15 +622,13 @@ switch ($action) {
         if (in_array($themeToActivate, $themes)) {
             setActiveTheme($db, $themeToActivate);
         }
-        header('Location: admin.php?action=list_themes');
+        header('Location: ?action=list_themes');
         exit();
 
-    // -----------------------------------------------------------
     // THEMES: EDIT
-    // -----------------------------------------------------------
     case 'edit_theme':
         $themeName = $db->querySingle("SELECT value FROM config WHERE key='active_theme'");
-        $themePath = __DIR__ . '/css/' . $themeName . '.css';
+        $themePath = '../css/' . $themeName . '.css';
         if (isset($_POST['save_theme'])) {
             $cssContent = $_POST['css_content'] ?? '';
             file_put_contents($themePath, $cssContent);
@@ -637,9 +649,7 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // CONFIG: LIST & SAVE
-    // -----------------------------------------------------------
     case 'list_config':
         if (isset($_POST['save_config'])) {
             foreach ($_POST['config'] as $k => $v) {
@@ -672,14 +682,12 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // HEROES: LIST
-    // -----------------------------------------------------------
     case 'list_heroes':
         requireLogin();
         $res = $db->query("SELECT * FROM heroes ORDER BY id DESC");
         $html = "<h2>Héroes (Hero Banners)</h2>
-                 <p><a href='admin.php?action=edit_hero'>[+] Agregar Nuevo Hero</a></p>
+                 <p><a href='?action=edit_hero'>[+] Agregar Nuevo Hero</a></p>
                  <table class='admin-table'>
                     <tr>
                         <th>ID</th>
@@ -697,8 +705,8 @@ switch ($action) {
                         <td>" . htmlspecialchars($row['subtitle']) . "</td>
                         <td>" . htmlspecialchars($row['background_image']) . "</td>
                         <td>
-                          <a href='admin.php?action=edit_hero&id={$row['id']}'>Editar</a> |
-                          <a href='admin.php?action=delete_hero&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
+                          <a href='?action=edit_hero&id={$row['id']}'>Editar</a> |
+                          <a href='?action=delete_hero&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
         }
@@ -706,9 +714,7 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // HEROES: EDIT (Add / Update)
-    // -----------------------------------------------------------
     case 'edit_hero':
         requireLogin();
         $id = $_GET['id'] ?? null;
@@ -758,7 +764,7 @@ switch ($action) {
             $st->bindValue(':bg', $backgroundImage, SQLITE3_TEXT);
             $st->execute();
 
-            header('Location: admin.php?action=list_heroes');
+            header('Location: ?action=list_heroes');
             exit();
         }
 
@@ -784,9 +790,7 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // HEROES: DELETE
-    // -----------------------------------------------------------
     case 'delete_hero':
         requireLogin();
         $id = $_GET['id'] ?? null;
@@ -795,17 +799,15 @@ switch ($action) {
             $st->bindValue(':id', $id, SQLITE3_INTEGER);
             $st->execute();
         }
-        header('Location: admin.php?action=list_heroes');
+        header('Location: ?action=list_heroes');
         exit();
 
-    // -----------------------------------------------------------
     // SOCIAL MEDIA: LIST
-    // -----------------------------------------------------------
     case 'list_social_media':
         requireLogin();
         $res = $db->query("SELECT * FROM social_media ORDER BY id DESC");
         $html = "<h2>Redes Sociales</h2>
-                 <p><a href='admin.php?action=edit_social_media'>[+] Agregar Nuevo Enlace</a></p>
+                 <p><a href='?action=edit_social_media'>[+] Agregar Nuevo Enlace</a></p>
                  <table class='admin-table'>
                     <tr>
                         <th>ID</th>
@@ -823,8 +825,8 @@ switch ($action) {
                         <td>" . htmlspecialchars($row['url']) . "</td>
                         <td><img src='img/" . htmlspecialchars($row['logo']) . "' alt='" . htmlspecialchars($row['name']) . "' style='max-width:50px;'></td>
                         <td>
-                          <a href='admin.php?action=edit_social_media&id={$row['id']}'>Editar</a> |
-                          <a href='admin.php?action=delete_social_media&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
+                          <a href='?action=edit_social_media&id={$row['id']}'>Editar</a> |
+                          <a href='?action=delete_social_media&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
                         </td>
                       </tr>";
         }
@@ -832,9 +834,7 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // SOCIAL MEDIA: EDIT (Add / Update)
-    // -----------------------------------------------------------
     case 'edit_social_media':
         requireLogin();
         $id = $_GET['id'] ?? null;
@@ -884,7 +884,7 @@ switch ($action) {
             $st->bindValue(':logo', $logo, SQLITE3_TEXT);
             $st->execute();
 
-            header('Location: admin.php?action=list_social_media');
+            header('Location: ?action=list_social_media');
             exit();
         }
 
@@ -910,9 +910,7 @@ switch ($action) {
         renderAdmin($html);
         break;
 
-    // -----------------------------------------------------------
     // SOCIAL MEDIA: DELETE
-    // -----------------------------------------------------------
     case 'delete_social_media':
         requireLogin();
         $id = $_GET['id'] ?? null;
@@ -921,20 +919,224 @@ switch ($action) {
             $st->bindValue(':id', $id, SQLITE3_INTEGER);
             $st->execute();
         }
-        header('Location: admin.php?action=list_social_media');
+        header('Location: ?action=list_social_media');
         exit();
 
-    // -----------------------------------------------------------
+    // ---------------------------------------------------------------------
+    // NEW: CUSTOM CSS CRUD
+    // ---------------------------------------------------------------------
+
+    // CUSTOM CSS: LIST
+    case 'list_custom_css':
+        requireLogin();
+        $res = $db->query("SELECT * FROM custom_css ORDER BY id DESC");
+        $html = "<h2>Custom CSS Rulesets</h2>
+                 <p><a href='?action=edit_custom_css'>[+] Add New Custom CSS</a></p>
+                 <table class='admin-table'>
+                   <tr>
+                     <th>ID</th>
+                     <th>Title</th>
+                     <th>Active</th>
+                     <th>Created At</th>
+                     <th>Actions</th>
+                   </tr>";
+        while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
+            $active = $row['active'] ? 'Yes' : 'No';
+            $html .= "<tr>
+                        <td>{$row['id']}</td>
+                        <td>" . htmlspecialchars($row['title']) . "</td>
+                        <td>$active</td>
+                        <td>" . htmlspecialchars($row['created_at']) . "</td>
+                        <td>
+                          <a href='?action=edit_custom_css&id={$row['id']}'>Edit</a> |
+                          <a href='?action=delete_custom_css&id={$row['id']}' onclick='return confirm(\"Delete?\");'>Delete</a>";
+            if (!$row['active']) {
+                $html .= " | <a href='?action=activate_custom_css&id={$row['id']}'>Activate</a>";
+            }
+            $html .= "</td>
+                     </tr>";
+        }
+        $html .= "</table>";
+        renderAdmin($html);
+        break;
+
+    // CUSTOM CSS: ADD / EDIT
+    case 'edit_custom_css':
+        requireLogin();
+        $id = $_GET['id'] ?? null;
+        $cssData = ['id' => '', 'title' => '', 'content' => ''];
+        if ($id) {
+            $stmt = $db->prepare("SELECT * FROM custom_css WHERE id = :id");
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $res = $stmt->execute();
+            $found = $res->fetchArray(SQLITE3_ASSOC);
+            if ($found) {
+                $cssData = $found;
+            }
+        }
+        if (isset($_POST['save_custom_css'])) {
+            $title = $_POST['title'] ?? '';
+            $content = $_POST['content'] ?? '';
+            if ($id) {
+                $stmt = $db->prepare("UPDATE custom_css SET title = :title, content = :content WHERE id = :id");
+                $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            } else {
+                $stmt = $db->prepare("INSERT INTO custom_css (title, content) VALUES (:title, :content)");
+            }
+            $stmt->bindValue(':title', $title, SQLITE3_TEXT);
+            $stmt->bindValue(':content', $content, SQLITE3_TEXT);
+            $stmt->execute();
+            header('Location: ?action=list_custom_css');
+            exit();
+        }
+        $html = "<div class='admin-form'>
+                    <h2>" . ($id ? "Edit Custom CSS" : "Add New Custom CSS") . "</h2>
+                    <form method='post'>
+                        <label>Title:</label>
+                        <input type='text' name='title' value='" . htmlspecialchars($cssData['title']) . "' required>
+                        <label>CSS Content:</label>
+                        <textarea name='content' rows='10' class='jocarsa-lightslateblue'>" . htmlspecialchars($cssData['content']) . "</textarea>
+                        <button type='submit' name='save_custom_css'>Save</button>
+                    </form>
+                 </div>";
+        renderAdmin($html);
+        break;
+
+    // CUSTOM CSS: ACTIVATE
+    case 'activate_custom_css':
+        requireLogin();
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            // Set all custom CSS entries inactive
+            $db->exec("UPDATE custom_css SET active = 0");
+            // Activate the selected entry
+            $stmt = $db->prepare("UPDATE custom_css SET active = 1 WHERE id = :id");
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $stmt->execute();
+        }
+        header('Location: ?action=list_custom_css');
+        exit();
+
+    // CUSTOM CSS: DELETE
+    case 'delete_custom_css':
+        requireLogin();
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            $stmt = $db->prepare("DELETE FROM custom_css WHERE id = :id");
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $stmt->execute();
+        }
+        header('Location: ?action=list_custom_css');
+        exit();
+
+    // NEW: ADMINS CRUD
+    // ADMINS: LIST
+    case 'list_admins':
+        requireLogin();
+        $res = $db->query("SELECT * FROM admins ORDER BY id DESC");
+        $html = "<h2>Administradores</h2>
+                 <p><a href='?action=edit_admin'>[+] Agregar Nuevo Administrador</a></p>
+                 <table class='admin-table'>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre Completo</th>
+                        <th>Email</th>
+                        <th>Username</th>
+                        <th>Acciones</th>
+                    </tr>";
+        while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
+            $html .= "<tr>
+                        <td>{$row['id']}</td>
+                        <td>" . htmlspecialchars($row['name']) . "</td>
+                        <td>" . htmlspecialchars($row['email']) . "</td>
+                        <td>" . htmlspecialchars($row['username']) . "</td>
+                        <td>
+                            <a href='?action=edit_admin&id={$row['id']}'>Editar</a> |
+                            <a href='?action=delete_admin&id={$row['id']}' onclick='return confirm(\"¿Eliminar?\");'>Eliminar</a>
+                        </td>
+                      </tr>";
+        }
+        $html .= "</table>";
+        renderAdmin($html);
+        break;
+
+    // ADMINS: EDIT / ADD
+    case 'edit_admin':
+        requireLogin();
+        $id = $_GET['id'] ?? null;
+        $adminData = ['id' => '', 'name' => '', 'email' => '', 'username' => '', 'password' => ''];
+        if ($id) {
+            $stmt = $db->prepare("SELECT * FROM admins WHERE id = :id");
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $res = $stmt->execute();
+            $found = $res->fetchArray(SQLITE3_ASSOC);
+            if ($found) {
+                $adminData = $found;
+            }
+        }
+        if (isset($_POST['save_admin'])) {
+            $name     = $_POST['name'] ?? '';
+            $email    = $_POST['email'] ?? '';
+            $username = $_POST['username'] ?? '';
+            $password = $_POST['password'] ?? '';
+            if ($id) {
+                if (!empty($password)) {
+                    $stmt = $db->prepare("UPDATE admins SET name = :name, email = :email, username = :username, password = :password WHERE id = :id");
+                    $stmt->bindValue(':password', $password, SQLITE3_TEXT);
+                } else {
+                    $stmt = $db->prepare("UPDATE admins SET name = :name, email = :email, username = :username WHERE id = :id");
+                }
+                $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            } else {
+                $stmt = $db->prepare("INSERT INTO admins (name, email, username, password) VALUES (:name, :email, :username, :password)");
+                $stmt->bindValue(':password', $password, SQLITE3_TEXT);
+            }
+            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+            $stmt->bindValue(':email', $email, SQLITE3_TEXT);
+            $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+            $stmt->execute();
+            header('Location: ?action=list_admins');
+            exit();
+        }
+        $html = "<div class='admin-form'>
+                    <h2>" . ($id ? "Editar Administrador" : "Agregar Administrador") . "</h2>
+                    <form method='post'>
+                        <label>Nombre Completo:</label>
+                        <input type='text' name='name' value='" . htmlspecialchars($adminData['name']) . "' required>
+                        <label>Email:</label>
+                        <input type='email' name='email' value='" . htmlspecialchars($adminData['email']) . "' required>
+                        <label>Username:</label>
+                        <input type='text' name='username' value='" . htmlspecialchars($adminData['username']) . "' required>
+                        <label>" . ($id ? "Nueva Contraseña (dejar vacío para mantener la actual):" : "Contraseña:") . "</label>
+                        <input type='password' name='password' value=''>
+                        <button type='submit' name='save_admin'>Guardar</button>
+                    </form>
+                 </div>";
+        renderAdmin($html);
+        break;
+
+    // ADMINS: DELETE
+    case 'delete_admin':
+        requireLogin();
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            $stmt = $db->prepare("DELETE FROM admins WHERE id = :id");
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $stmt->execute();
+        }
+        header('Location: ?action=list_admins');
+        exit();
+
     // DEFAULT
-    // -----------------------------------------------------------
     default:
         if (isLoggedIn()) {
-            header('Location: admin.php?action=dashboard');
+            header('Location: ?action=dashboard');
         } else {
-            header('Location: admin.php?action=login');
+            header('Location: ?action=login');
         }
         exit();
 }
 ?>
-	<link rel="stylesheet" href="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa%20%7C%20lightslateblue.css">
-    <script src="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa%20%7C%20lightslateblue.js"></script>
+<link rel="stylesheet" href="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa%20%7C%20lightslateblue.css">
+<script src="https://jocarsa.github.io/jocarsa-lightslateblue/jocarsa%20%7C%20lightslateblue.js"></script>
+

@@ -1,6 +1,7 @@
 /* admin.css */
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
 body {
-    font-family: Arial, sans-serif;
+    font-family: Ubuntu, sans-serif;
     margin: 0;
     padding: 0;
     background-color: #f1f1f1;
@@ -17,6 +18,7 @@ body {
     background-color: #32373c;
     color: #c3c4c7;
     padding: 20px;
+    padding-right:0px;
     position: fixed;
     height: 100vh;
 }
@@ -45,8 +47,17 @@ body {
     color: #c3c4c7;
     padding: 20px;
     text-align: center;
+    display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+	align-content: stretch;
 }
-
+#admin-header img{
+	width:50px;
+	margin-right:20px;
+}
 #admin-header h1 {
     margin: 0;
     font-size: 24px;
@@ -132,5 +143,10 @@ footer {
     bottom: 0;
     width: calc(100% - 220px);
     margin-left: 220px;
+}
+.active{
+	background:#f1f1f1;
+	color:black !important;
+	border-radius:5px 0px 0px 5px;
 }
 

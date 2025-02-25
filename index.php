@@ -98,6 +98,18 @@ if (!in_array($activeTheme, $availableThemes) && count($availableThemes) > 0) {
 }
 
 // ---------------------------------------------------------------------
+// Fetch active custom CSS (if any)
+// ---------------------------------------------------------------------
+$activeCustomCss = '';
+$resultCustomCss = $db->query("SELECT content FROM custom_css WHERE active = 1 LIMIT 1");
+if ($resultCustomCss) {
+    $cssRow = $resultCustomCss->fetchArray(SQLITE3_ASSOC);
+    if ($cssRow) {
+        $activeCustomCss = $cssRow['content'];
+    }
+}
+
+// ---------------------------------------------------------------------
 // Function to fetch hero for a given slug
 // ---------------------------------------------------------------------
 function fetchHeroSection($db, $slug) {
@@ -143,7 +155,8 @@ function render(
     $metaTags,
     $metaAuthor,
     $analyticsUser,
-    $socialMediaLinks
+    $socialMediaLinks,
+    $customCssRules
 ) {
     echo "<!DOCTYPE html>\n";
     echo "<html lang=\"en\">\n";
@@ -155,6 +168,12 @@ function render(
     echo "        <meta name=\"keywords\" content=\"$metaTags\">\n";
     echo "        <meta name=\"author\" content=\"$metaAuthor\">\n";
     echo "        <link rel=\"stylesheet\" href=\"css/$theme.css\">\n";
+    // If there is an active custom CSS ruleset, output it inline
+    if (!empty($customCssRules)) {
+        echo "        <style>\n";
+        echo $customCssRules;
+        echo "        </style>\n";
+    }
     echo "        <link rel=\"icon\" type=\"image/svg+xml\" href=\"$logo\">\n";
     echo "    </head>\n";
     echo "    <body>\n";
@@ -172,7 +191,7 @@ function render(
     if (!empty($socialMediaLinks)) {
         foreach ($socialMediaLinks as $link) {
             echo "<a href='" . htmlspecialchars($link['url']) . "' target='_blank'>
-                    <img src='img/" . htmlspecialchars($link['logo']) . "' alt='" . htmlspecialchars($link['name']) . "' target='_blank'>
+                    <img src='img/" . htmlspecialchars($link['logo']) . "' alt='" . htmlspecialchars($link['name']) . "'>
                   </a>\n";
         }
     }
@@ -221,16 +240,18 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 $menu .= " | <a href='?page=contacto'>Contacto</a>";
 
 // ---------------------------------------------------------------------
-// Handle requests
-// ---------------------------------------------------------------------
-$page = $_GET['page'] ?? 'inicio';
-
 // Fetch social media links from the database
+// ---------------------------------------------------------------------
 $socialMediaResult = $db->query("SELECT name, url, logo FROM social_media WHERE url != ''");
 $socialMediaLinks = [];
 while ($row = $socialMediaResult->fetchArray(SQLITE3_ASSOC)) {
     $socialMediaLinks[] = $row;
 }
+
+// ---------------------------------------------------------------------
+// Handle requests
+// ---------------------------------------------------------------------
+$page = $_GET['page'] ?? 'inicio';
 
 if ($page === 'blog') {
     // BLOG
@@ -246,7 +267,7 @@ if ($page === 'blog') {
     // fetch hero for "blog"
     $heroSection = fetchHeroSection($db, 'blog');
 
-    render($heroSection, $blogContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks);
+    render($heroSection, $blogContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks, $activeCustomCss);
 
 } elseif ($page === 'contacto') {
     // CONTACT
@@ -292,7 +313,7 @@ if ($page === 'blog') {
     // fetch hero for "contacto"
     $heroSection = fetchHeroSection($db, 'contacto');
 
-    render($heroSection, $contactContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks);
+    render($heroSection, $contactContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks, $activeCustomCss);
 
 } else {
     // SPECIFIC PAGE
@@ -306,9 +327,9 @@ if ($page === 'blog') {
         // fetch hero for the given $page
         $heroSection = fetchHeroSection($db, $page);
 
-        render($heroSection, $pageContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks);
+        render($heroSection, $pageContent, $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks, $activeCustomCss);
     } else {
-        render('', "<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks);
+        render('', "<h2>Page Not Found</h2>", $menu, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks, $activeCustomCss);
     }
 }
 
