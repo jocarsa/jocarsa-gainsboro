@@ -7,14 +7,13 @@ require_once 'config.php';
 // ---------------------------------------------------------------------
 $db = new SQLite3($dbPath);
 
-// Create pages table
+// Create tables
 $db->exec("CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT UNIQUE NOT NULL,
     content TEXT NOT NULL
 )");
 
-// Create blog table
 $db->exec("CREATE TABLE IF NOT EXISTS blog (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
@@ -22,14 +21,12 @@ $db->exec("CREATE TABLE IF NOT EXISTS blog (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
-// Create config table
 $db->exec("CREATE TABLE IF NOT EXISTS config (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT UNIQUE NOT NULL,
     value TEXT NOT NULL
 )");
 
-// Create contact table
 $db->exec("CREATE TABLE IF NOT EXISTS contact (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -39,7 +36,6 @@ $db->exec("CREATE TABLE IF NOT EXISTS contact (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
-// Create media table
 $db->exec("CREATE TABLE IF NOT EXISTS media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     filename TEXT NOT NULL,
@@ -47,7 +43,6 @@ $db->exec("CREATE TABLE IF NOT EXISTS media (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
-// Create heroes table
 $db->exec("CREATE TABLE IF NOT EXISTS heroes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     page_slug TEXT UNIQUE NOT NULL,
@@ -56,7 +51,6 @@ $db->exec("CREATE TABLE IF NOT EXISTS heroes (
     background_image TEXT
 )");
 
-// Create social_media table
 $db->exec("CREATE TABLE IF NOT EXISTS social_media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     category TEXT NOT NULL,
@@ -65,9 +59,6 @@ $db->exec("CREATE TABLE IF NOT EXISTS social_media (
     logo TEXT NOT NULL
 )");
 
-// -------------------------------
-// New: Create admins table
-// -------------------------------
 $db->exec("CREATE TABLE IF NOT EXISTS admins (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -76,13 +67,11 @@ $db->exec("CREATE TABLE IF NOT EXISTS admins (
     password TEXT NOT NULL
 )");
 
-// Insert default admin if not exists
 $db->exec("
     INSERT OR IGNORE INTO admins (name, email, username, password)
     VALUES ('Jose Vicente Carratala', 'info@josevicentecarratala.com', 'jocarsa', 'jocarsa')
 ");
 
-// Insert default config values if they don't exist, including the new analytics_user key
 $db->exec("
     INSERT OR IGNORE INTO config (key, value) VALUES
         ('title', 'jocarsa | gainsboro'),
@@ -95,7 +84,6 @@ $db->exec("
         ('analytics_user', 'defaultUser')
 ");
 
-// Create custom_css table for additional CSS rulesets
 $db->exec("CREATE TABLE IF NOT EXISTS custom_css (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
@@ -104,7 +92,6 @@ $db->exec("CREATE TABLE IF NOT EXISTS custom_css (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
-// Insert default social media links only if they don't exist
 $defaultSocialMedia = [
     ['Generalistas', 'Facebook', 'facebook.png'],
     ['Generalistas', 'Instagram', 'instagram.png'],
@@ -153,7 +140,7 @@ function accionActual($accion1, $accion2) {
     return ($accion1 == $accion2) ? ' class="active" ' : '';
 }
 
-function renderAdmin($content) {
+function renderAdmin($content, $showNav = true) {
     echo "<!DOCTYPE html>
 <html>
 <head>
@@ -162,43 +149,54 @@ function renderAdmin($content) {
     <link rel='stylesheet' href='admin.css'>
 </head>
 <body>
-<div id='admin-container'>
-    <div id='admin-sidebar'>
-        <nav>
-            <a href='?action=dashboard'" . accionActual($_GET['action'] ?? '', "dashboard") . ">Inicio</a>
-            <hr>
-            <a href='?action=list_pages'" . accionActual($_GET['action'] ?? '', "list_pages") . ">Páginas</a>
-            <a href='?action=list_blog'" . accionActual($_GET['action'] ?? '', "list_blog") . ">Blog</a>
-            <a href='?action=list_media'" . accionActual($_GET['action'] ?? '', "list_media") . ">Biblioteca</a>
-            <a href='?action=list_heroes'" . accionActual($_GET['action'] ?? '', "list_heroes") . ">Heroes</a>
-            <a href='?action=list_social_media'" . accionActual($_GET['action'] ?? '', "list_social_media") . ">Redes Sociales</a>
-            <hr>
-            <a href='?action=list_themes'" . accionActual($_GET['action'] ?? '', "list_themes") . ">Temas</a>
-            <a href='?action=edit_theme'" . accionActual($_GET['action'] ?? '', "edit_theme") . ">Editar Tema</a>
-            <a href='?action=list_custom_css'" . accionActual($_GET['action'] ?? '', "list_custom_css") . ">CSS personalizado</a>
-            <hr>
-            <a href='?action=list_contact'" . accionActual($_GET['action'] ?? '', "list_contact") . ">Contacto</a>
-            <hr>
-            <a href='?action=list_admins'" . accionActual($_GET['action'] ?? '', "list_admins") . ">Administradores</a>
-            <a href='?action=list_config'" . accionActual($_GET['action'] ?? '', "list_config") . ">Configuración</a>
-            
-            <hr>
-            <a href='?action=logout'" . accionActual($_GET['action'] ?? '', "logout") . ">Salir</a>
-        </nav>
-    </div>
-    <div id='admin-content'>
-        <div id='admin-header'>
+<div id='admin-container'>";
+
+    if ($showNav) {
+        echo "<div id='admin-sidebar'>
+            <nav>
+                <a href='?action=dashboard'" . accionActual($_GET['action'] ?? '', "dashboard") . ">Inicio</a>
+                <hr>
+                <a href='?action=list_pages'" . accionActual($_GET['action'] ?? '', "list_pages") . ">Páginas</a>
+                <a href='?action=list_blog'" . accionActual($_GET['action'] ?? '', "list_blog") . ">Blog</a>
+                <a href='?action=list_media'" . accionActual($_GET['action'] ?? '', "list_media") . ">Biblioteca</a>
+                <a href='?action=list_heroes'" . accionActual($_GET['action'] ?? '', "list_heroes") . ">Heroes</a>
+                <a href='?action=list_social_media'" . accionActual($_GET['action'] ?? '', "list_social_media") . ">Redes Sociales</a>
+                <hr>
+                <a href='?action=list_themes'" . accionActual($_GET['action'] ?? '', "list_themes") . ">Temas</a>
+                <a href='?action=edit_theme'" . accionActual($_GET['action'] ?? '', "edit_theme") . ">Editar Tema</a>
+                <a href='?action=list_custom_css'" . accionActual($_GET['action'] ?? '', "list_custom_css") . ">CSS personalizado</a>
+                <hr>
+                <a href='?action=list_contact'" . accionActual($_GET['action'] ?? '', "list_contact") . ">Contacto</a>
+                <hr>
+                <a href='?action=list_admins'" . accionActual($_GET['action'] ?? '', "list_admins") . ">Administradores</a>
+                <a href='?action=list_config'" . accionActual($_GET['action'] ?? '', "list_config") . ">Configuración</a>
+                <hr>
+                <a href='?action=logout'" . accionActual($_GET['action'] ?? '', "logout") . ">Salir</a>
+            </nav>
+        </div>";
+    }
+
+    echo "<div id='admin-content'>";
+
+    if ($showNav) {
+        echo "<div id='admin-header'>
             <img src='gainsboro.png'>
             <h1>jocarsa | gainsboro</h1>
-        </div>
-        <div class='admin-section'>
+        </div>";
+    }
+
+    echo "<div class='admin-section'>
             $content
-        </div>
-    </div>
+        </div>";
+
+    if ($showNav) {
+        echo "<footer>
+            &copy; " . date('Y') . " jocarsa | gainsboro
+        </footer>";
+    }
+
+    echo "</div>
 </div>
-<footer>
-    &copy; " . date('Y') . " jocarsa | gainsboro
-</footer>
 </body>
 </html>";
 }
@@ -274,7 +272,13 @@ switch ($action) {
 
     // LOGIN PAGE
     case 'login':
-        $html = "<div class='admin-form'>
+        $html = "
+        <style>
+        	#admin-content{margin:auto;width:100%;height:90%;}
+        	.admin-section{height:90%;}
+        </style>
+        <div class='login-box'>
+                    <img src='gainsboro.png' alt='Logo'>
                     <h2>Acceso al Panel</h2>
                     $message
                     <form method='post' action='?action=do_login'>
@@ -285,7 +289,7 @@ switch ($action) {
                         <button type='submit'>Acceder</button>
                     </form>
                  </div>";
-        renderAdmin($html);
+        renderAdmin($html, false);
         break;
 
     // DASHBOARD

@@ -6,11 +6,15 @@ body {
     padding: 0;
     background-color: #f1f1f1;
     display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
 }
 
 #admin-container {
     display: flex;
     width: 100%;
+    height: 100%;
 }
 
 #admin-sidebar {
@@ -40,6 +44,8 @@ body {
     margin-left: 220px;
     padding: 20px;
     width: calc(100% - 220px);
+    height: 100%;
+    overflow-y: auto;
 }
 
 #admin-header {
@@ -148,5 +154,54 @@ footer {
 	background:#f1f1f1;
 	color:black !important;
 	border-radius:5px 0px 0px 5px;
+}
+
+.login-box {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 300px;
+    margin:auto;
+    margin-top:100px;
+}
+
+.login-box img {
+    width: 100px;
+    margin-bottom: 20px;
+}
+
+.login-box h2 {
+    margin-top: 0;
+}
+
+.login-box label {
+    display: block;
+    margin-top: 10px;
+    text-align: left;
+}
+
+.login-box input {
+    width: calc(100% - 22px);
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.login-box button {
+    background-color: #0073aa;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.login-box button:hover {
+    background-color: #005177;
 }
 
