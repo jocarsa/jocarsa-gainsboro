@@ -390,7 +390,7 @@ switch ($action) {
             if (!empty($_FILES['file']['name'])) {
                 $fileName = $_FILES['file']['name'];
                 $tmpName  = $_FILES['file']['tmp_name'];
-                $targetDir = __DIR__ . '/static/';
+                $targetDir = '../static/';
                 if (!is_dir($targetDir)) {
                     mkdir($targetDir, 0777, true);
                 }
