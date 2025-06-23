@@ -1,6 +1,4 @@
-/* adminlike.css
-   Un tema para el front-end con estilo similar al panel de administración */
-
+/* adminlike.css - Un tema para el front-end con estilo similar al panel de administración */
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
 
 /* Global Resets */
@@ -9,35 +7,38 @@ html, body {
     padding: 0;
     box-sizing: border-box;
     font-family: 'Ubuntu', Arial, sans-serif;
-    background-color: #f4f4f4; /* Fondo gris claro */
-    color: #333;              /* Texto oscuro para contraste */
+    background-color: #f4f4f4;
+    color: #333;
 }
 
 /* HEADER */
 header {
-    background-color: #3a3a3a; /* Gris oscuro, igual que la barra superior del panel */
+    background-color: #3a3a3a;
     color: gainsboro;
     padding: 20px;
     text-align: center;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
-p{
-	text-align:justify;
+
+p {
+    text-align: justify;
 }
+
 header h1 {
     margin: 0;
     font-size: 1.8rem;
-    display: inline-block; 
+    display: inline-block;
 }
 
 header h1 img {
     height: 40px;
     margin-right: 10px;
-    vertical-align: middle; 
+    vertical-align: middle;
 }
-header h1 a{
-	text-decoration:none;
-	color:inherit;
+
+header h1 a {
+    text-decoration: none;
+    color: inherit;
 }
 
 /* NAVIGATION */
@@ -47,11 +48,11 @@ nav {
     text-align: center;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     display: flex;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	justify-content: center;
-	align-items: center;
-	align-content: stretch;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    align-content: stretch;
 }
 
 nav a {
@@ -62,7 +63,7 @@ nav a {
     padding: 8px 15px;
     border-radius: 4px;
     transition: background-color 0.3s ease;
-    text-transform:uppercase;
+    text-transform: uppercase;
 }
 
 nav a:hover {
@@ -90,7 +91,7 @@ article {
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 1px solid #ddd;
-        width: 70%;
+    width: 70%;
     margin: auto;
 }
 
@@ -128,7 +129,7 @@ form textarea {
     margin-bottom: 15px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    box-sizing:border-box;
+    box-sizing: border-box;
 }
 
 form button[type="submit"] {
@@ -151,7 +152,7 @@ footer {
     color: gainsboro;
     padding: 20px;
     text-align: center;
-    margin-top: 20px; 
+    margin-top: 20px;
 }
 
 footer img {
@@ -165,10 +166,12 @@ hr {
     border-top: 1px solid #ccc;
     margin: 20px 0;
 }
-iframe{
-	border:none;
-	width:100%;
+
+iframe {
+    border: none;
+    width: 100%;
 }
+
 /* Make sure <body> and <html> span full width (already normal) */
 html, body {
     margin: 0;
@@ -182,39 +185,64 @@ html, body {
 /* The hero section is placed outside the .main container, so let it stretch */
 .hero {
     width: 100%;
-    min-height: 700px; /* or whatever height you prefer */
-    display: flex;          /* enables flexbox */
-    align-items: center;    /* vertical centering */
-    justify-content: center;/* horizontal centering */
+    min-height: 700px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    color: #ffffff; /* White text on background image */
+    color: #ffffff;
 }
 
-/* Overlay container to limit content width or add a backdrop */
 .hero-content {
     max-width: 800px;
-    /*background-color: rgba(0, 0, 0, 0.4);*/ /* optional translucent background to make text more readable */
     padding: 20px;
     border-radius: 4px;
-    /* margin: 0 auto; <-- not needed if using flex center on the parent */
-    text-align:center;
+    text-align: center;
 }
 
 .hero h2 {
-   text-align:center;
-    
-    font-size:4em
+    text-align: center;
+    font-size: 4em;
 }
 
 .hero p {
- text-align:center;
+    text-align: center;
     font-size: 2rem;
-
 }
-nav a img{
-	width:28px;
+
+nav a img {
+    width: 28px;
+}
+
+/* Media Queries for Mobile Responsiveness */
+@media (max-width: 768px) {
+    /* Hide the hero banner on mobile */
+    .hero {
+        display: none;
+    }
+
+    /* Stack menu elements vertically */
+    nav {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    nav a {
+        margin: 5px 0;
+        text-align: center;
+    }
+
+    /* Stack footer elements vertically */
+    footer {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    footer img {
+        margin-bottom: 10px;
+    }
 }
 
