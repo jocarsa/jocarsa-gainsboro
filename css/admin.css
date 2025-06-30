@@ -225,6 +225,9 @@ main>div hr{
 	width:100%;
 	clear:both;
 }
+footer{
+	clear:both;
+}
 
 /* Media Queries for Mobile Responsiveness */
 @media (max-width: 768px) {
