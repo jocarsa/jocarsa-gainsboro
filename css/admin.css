@@ -216,6 +216,10 @@ html, body {
 nav a img {
     width: 28px;
 }
+main>div img{
+	width:50%;
+	margin:auto;
+}
 
 /* Media Queries for Mobile Responsiveness */
 @media (max-width: 768px) {
