@@ -218,7 +218,12 @@ nav a img {
 }
 main>div img{
 	width:50%;
-	margin:auto;
+	float: left;
+    margin-right: 20px;
+}
+main>div hr{
+	width:100%;
+	clear:both;
 }
 
 /* Media Queries for Mobile Responsiveness */
