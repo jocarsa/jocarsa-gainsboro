@@ -107,4 +107,24 @@ footer img{
 #content {
     flex: 1;
 }
+/* Add this to your estilo.css or relevant theme CSS file */
+.social-media-links {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.social-media-links a {
+    display: inline-block;
+    margin: 0 10px;
+}
+
+.social-media-links img {
+    width: 30px;
+    height: 30px;
+    transition: transform 0.3s ease;
+}
+
+.social-media-links img:hover {
+    transform: scale(1.2);
+}
 

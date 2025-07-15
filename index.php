@@ -4,9 +4,7 @@ require_once 'config.php';
 // Initialize SQLite3 database
 $db = new SQLite3($dbPath);
 
-// ---------------------------------------------------------------------
 // Ensure all necessary tables exist (including the pages hierarchy)
-// ---------------------------------------------------------------------
 $db->exec("CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT UNIQUE NOT NULL,
@@ -14,20 +12,17 @@ $db->exec("CREATE TABLE IF NOT EXISTS pages (
     parent_id INTEGER DEFAULT NULL,
     FOREIGN KEY(parent_id) REFERENCES pages(id)
 )");
-
 $db->exec("CREATE TABLE IF NOT EXISTS blog (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
-
 $db->exec("CREATE TABLE IF NOT EXISTS config (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT UNIQUE NOT NULL,
     value TEXT NOT NULL
 )");
-
 $db->exec("CREATE TABLE IF NOT EXISTS contact (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -36,7 +31,6 @@ $db->exec("CREATE TABLE IF NOT EXISTS contact (
     message TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
-
 $db->exec("CREATE TABLE IF NOT EXISTS heroes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     page_slug TEXT UNIQUE NOT NULL,
@@ -44,13 +38,19 @@ $db->exec("CREATE TABLE IF NOT EXISTS heroes (
     subtitle TEXT,
     background_image TEXT
 )");
-
 $db->exec("CREATE TABLE IF NOT EXISTS social_media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     category TEXT NOT NULL,
     name TEXT NOT NULL,
     url TEXT NOT NULL,
     logo TEXT NOT NULL
+)");
+$db->exec("CREATE TABLE IF NOT EXISTS custom_css (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    active INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )");
 
 // Insert default config values if not exists
@@ -66,26 +66,21 @@ $db->exec("
         ('analytics_user', 'defaultUser')
 ");
 
-// ---------------------------------------------------------------------
 // Retrieve configuration values
-// ---------------------------------------------------------------------
 $config = [];
 $configResult = $db->query("SELECT key, value FROM config");
 while ($row = $configResult->fetchArray(SQLITE3_ASSOC)) {
     $config[$row['key']] = $row['value'];
 }
-
-$title           = htmlspecialchars($config['title'] ?? 'Default Title');
-$logo            = htmlspecialchars($config['logo'] ?? 'default-logo.svg');
-$footerImage     = htmlspecialchars($config['footer_image'] ?? 'default-footer-logo.svg');
+$title = htmlspecialchars($config['title'] ?? 'Default Title');
+$logo = htmlspecialchars($config['logo'] ?? 'default-logo.svg');
+$footerImage = htmlspecialchars($config['footer_image'] ?? 'default-footer-logo.svg');
 $metaDescription = htmlspecialchars($config['meta_description'] ?? 'Default description');
-$metaTags        = htmlspecialchars($config['meta_tags'] ?? 'default, tags');
-$metaAuthor      = htmlspecialchars($config['meta_author'] ?? 'Default Author');
-$analyticsUser   = htmlspecialchars($config['analytics_user'] ?? 'defaultUser');
+$metaTags = htmlspecialchars($config['meta_tags'] ?? 'default, tags');
+$metaAuthor = htmlspecialchars($config['meta_author'] ?? 'Default Author');
+$analyticsUser = htmlspecialchars($config['analytics_user'] ?? 'defaultUser');
 
-// ---------------------------------------------------------------------
 // Detect available themes in the css folder
-// ---------------------------------------------------------------------
 $themeFiles = glob(__DIR__ . '/css/*.css');
 $availableThemes = [];
 if ($themeFiles !== false) {
@@ -99,9 +94,7 @@ if (!in_array($activeTheme, $availableThemes) && count($availableThemes) > 0) {
     $activeTheme = $availableThemes[0];
 }
 
-// ---------------------------------------------------------------------
 // Retrieve active custom CSS (allowing multiple active rulesets)
-// ---------------------------------------------------------------------
 $activeCustomCss = '';
 $resultCustomCss = $db->query("SELECT content FROM custom_css WHERE active = 1");
 if ($resultCustomCss) {
@@ -110,26 +103,29 @@ if ($resultCustomCss) {
     }
 }
 
-// ---------------------------------------------------------------------
-// Navigation functions
-// ---------------------------------------------------------------------
+// Function to fetch social media links
+function fetchSocialMediaLinks($db) {
+    $socialMediaLinks = [];
+    $result = $db->query("SELECT name, url, logo FROM social_media ORDER BY category, name");
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $socialMediaLinks[] = $row;
+    }
+    return $socialMediaLinks;
+}
 
-// Render primary navigation with "Inicio" first and "Blog" and "Contacto" last.
+// Navigation functions
 function renderPrimaryNav($db) {
     $html = "<nav class='primary-nav'>";
-    // Always show "Inicio" first.
     $activeClass = (isset($_GET['page']) && $_GET['page'] === 'inicio') ? "active" : "";
     $html .= "<a class='$activeClass' href='?page=inicio'>Inicio</a>";
-    
-    // Show created level-1 pages except "inicio", "blog" and "contacto"
+
     $stmt = $db->prepare("SELECT * FROM pages WHERE parent_id IS NULL AND title NOT IN ('inicio','blog','contacto') ORDER BY title ASC");
     $result = $stmt->execute();
     while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-         $activeClass = (isset($_GET['page']) && $_GET['page'] === $row['title']) ? "active" : "";
-         $html .= "<a class='$activeClass' href='?page=" . urlencode($row['title']) . "'>" . htmlspecialchars($row['title']) . "</a>";
+        $activeClass = (isset($_GET['page']) && $_GET['page'] === $row['title']) ? "active" : "";
+        $html .= "<a class='$activeClass' href='?page=" . urlencode($row['title']) . "'>" . htmlspecialchars($row['title']) . "</a>";
     }
-    
-    // Append static links "Blog" and "Contacto" at the end.
+
     $activeClass = (isset($_GET['page']) && $_GET['page'] === 'blog') ? "active" : "";
     $html .= "<a class='$activeClass' href='?page=blog'>Blog</a>";
     $activeClass = (isset($_GET['page']) && $_GET['page'] === 'contacto') ? "active" : "";
@@ -138,7 +134,6 @@ function renderPrimaryNav($db) {
     return $html;
 }
 
-// Helper to compute the active chain (from root to current active page)
 function getActiveChain($db, $activeTitle) {
     $chain = [];
     $stmt = $db->prepare("SELECT * FROM pages WHERE title = :title");
@@ -147,50 +142,45 @@ function getActiveChain($db, $activeTitle) {
     $activePage = $result->fetchArray(SQLITE3_ASSOC);
     if (!$activePage) return $chain;
     while ($activePage) {
-         array_unshift($chain, $activePage['id']);
-         if ($activePage['parent_id']) {
-              $stmt = $db->prepare("SELECT * FROM pages WHERE id = :pid");
-              $stmt->bindValue(':pid', $activePage['parent_id'], SQLITE3_INTEGER);
-              $result = $stmt->execute();
-              $activePage = $result->fetchArray(SQLITE3_ASSOC);
-         } else {
-              break;
-         }
+        array_unshift($chain, $activePage['id']);
+        if ($activePage['parent_id']) {
+            $stmt = $db->prepare("SELECT * FROM pages WHERE id = :pid");
+            $stmt->bindValue(':pid', $activePage['parent_id'], SQLITE3_INTEGER);
+            $result = $stmt->execute();
+            $activePage = $result->fetchArray(SQLITE3_ASSOC);
+        } else {
+            break;
+        }
     }
     return $chain;
 }
 
-// Recursively render sub-navigation menus. Always keep the subnav open for any parent in the active chain.
 function renderSubNav($db, $parentId, $activeChain) {
     $stmt = $db->prepare("SELECT * FROM pages WHERE parent_id = :parent_id ORDER BY title ASC");
     $stmt->bindValue(':parent_id', $parentId, SQLITE3_INTEGER);
     $result = $stmt->execute();
     $children = [];
     while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-         $children[] = $row;
+        $children[] = $row;
     }
     if (empty($children)) return '';
-    
+
     $html = "<nav class='subnav'>";
     foreach ($children as $child) {
-         $activeClass = in_array($child['id'], $activeChain) ? "active" : "";
-         $html .= "<a class='$activeClass' href='?page=" . urlencode($child['title']) . "'>" . htmlspecialchars($child['title']) . "</a>";
+        $activeClass = in_array($child['id'], $activeChain) ? "active" : "";
+        $html .= "<a class='$activeClass' href='?page=" . urlencode($child['title']) . "'>" . htmlspecialchars($child['title']) . "</a>";
     }
     $html .= "</nav>";
-    
-    // For each child in the active chain, render its submenu recursively.
+
     foreach ($children as $child) {
-         if (in_array($child['id'], $activeChain)) {
-              $html .= renderSubNav($db, $child['id'], $activeChain);
-         }
+        if (in_array($child['id'], $activeChain)) {
+            $html .= renderSubNav($db, $child['id'], $activeChain);
+        }
     }
     return $html;
 }
 
-// ---------------------------------------------------------------------
 // Other helper functions (hero section, final rendering)
-// ---------------------------------------------------------------------
-
 function fetchHeroSection($db, $slug) {
     $stmt = $db->prepare("SELECT * FROM heroes WHERE page_slug = :slug");
     $stmt->bindValue(':slug', $slug, SQLITE3_TEXT);
@@ -199,9 +189,9 @@ function fetchHeroSection($db, $slug) {
     if (!$hero) {
         return '';
     }
-    $title    = htmlspecialchars($hero['title']);
+    $title = htmlspecialchars($hero['title']);
     $subtitle = htmlspecialchars($hero['subtitle']);
-    $bgImage  = htmlspecialchars($hero['background_image']);
+    $bgImage = htmlspecialchars($hero['background_image']);
     return "
     <section class='hero' style='background-image: url(\"$bgImage\");'>
         <div class='hero-content'>
@@ -253,7 +243,6 @@ function render(
     echo "                </a>\n";
     echo "            </h1>\n";
     echo "        </header>\n";
-    // Output primary and sub-navigation
     echo $primaryNav;
     echo $subNav;
     if (!empty($hero)) {
@@ -264,26 +253,30 @@ function render(
     echo "        </main>\n";
     echo "        <footer>\n";
     echo "            &copy; " . date('Y') . " <img src=\"$footerImage\" alt=\"Footer Logo\"> $title\n";
+    if (!empty($socialMediaLinks)) {
+        echo "            <div class=\"social-media-links\">\n";
+        foreach ($socialMediaLinks as $link) {
+            echo "                <a href=\"" . htmlspecialchars($link['url']) . "\" target=\"_blank\">\n";
+            echo "                    <img src=\"img/" . htmlspecialchars($link['logo']) . "\" alt=\"" . htmlspecialchars($link['name']) . "\">\n";
+            echo "                </a>\n";
+        }
+        echo "            </div>\n";
+    }
     echo "        </footer>\n";
     echo "        <script src=\"https://ghostwhite.jocarsa.com/analytics.js?user=$analyticsUser\"></script>\n";
     echo "    </body>\n";
     echo "</html>\n";
 }
 
-// ---------------------------------------------------------------------
+// Fetch social media links
+$socialMediaLinks = fetchSocialMediaLinks($db);
+
 // Handle requests based on the GET parameter "page"
-// ---------------------------------------------------------------------
 $pageParam = $_GET['page'] ?? 'inicio';
-
-// Compute active chain (an array of page IDs from root to active page)
 $activeChain = getActiveChain($db, $pageParam);
-
-// Primary nav is always rendered.
 $primaryNav = renderPrimaryNav($db);
-// Render sub-navigation only if there is an active chain.
 $subNav = '';
 if (!empty($activeChain)) {
-    // Render subnav starting from the top-level active page
     $subNav = renderSubNav($db, $activeChain[0], $activeChain);
 }
 
@@ -298,17 +291,16 @@ if ($pageParam === 'blog') {
         $blogContent .= "</article>\n<hr>\n";
     }
     $heroSection = fetchHeroSection($db, 'blog');
-    render($heroSection, $blogContent, $primaryNav, $subNav, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, [], $activeCustomCss);
+    render($heroSection, $blogContent, $primaryNav, $subNav, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks, $activeCustomCss);
 } elseif ($pageParam === 'contacto') {
     $contactContent = "<h2>Contacto</h2>";
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $name    = trim($_POST['name'] ?? '');
-        $email   = trim($_POST['email'] ?? '');
+        $name = trim($_POST['name'] ?? '');
+        $email = trim($_POST['email'] ?? '');
         $subject = trim($_POST['subject'] ?? '');
         $message = trim($_POST['message'] ?? '');
         if ($name && $email && $subject && $message) {
-            $stmt = $db->prepare("INSERT INTO contact (name, email, subject, message)
-                                  VALUES (:n, :e, :s, :m)");
+            $stmt = $db->prepare("INSERT INTO contact (name, email, subject, message) VALUES (:n, :e, :s, :m)");
             $stmt->bindValue(':n', $name, SQLITE3_TEXT);
             $stmt->bindValue(':e', $email, SQLITE3_TEXT);
             $stmt->bindValue(':s', $subject, SQLITE3_TEXT);
@@ -332,7 +324,7 @@ if ($pageParam === 'blog') {
         <button type='submit'>Enviar</button>
     </form>";
     $heroSection = fetchHeroSection($db, 'contacto');
-    render($heroSection, $contactContent, $primaryNav, $subNav, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, [], $activeCustomCss);
+    render($heroSection, $contactContent, $primaryNav, $subNav, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks, $activeCustomCss);
 } else {
     $stmt = $db->prepare("SELECT content FROM pages WHERE title = :title");
     $stmt->bindValue(':title', $pageParam, SQLITE3_TEXT);
@@ -341,15 +333,13 @@ if ($pageParam === 'blog') {
     if ($row) {
         $pageContent = "<h2>" . htmlspecialchars($pageParam) . "</h2>\n<div>" . $row['content'] . "</div>\n";
         $heroSection = fetchHeroSection($db, $pageParam);
-        render($heroSection, $pageContent, $primaryNav, $subNav, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, [], $activeCustomCss);
+        render($heroSection, $pageContent, $primaryNav, $subNav, $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks, $activeCustomCss);
     } else {
-        render('', "<h2>Page Not Found</h2>", $primaryNav, '', $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, [], $activeCustomCss);
+        render('', "<h2>Page Not Found</h2>", $primaryNav, '', $activeTheme, $title, $logo, $footerImage, $metaDescription, $metaTags, $metaAuthor, $analyticsUser, $socialMediaLinks, $activeCustomCss);
     }
 }
 
-// ---------------------------------------------------------------------
-// Generate sitemap.xml on every load (unchanged)
-// ---------------------------------------------------------------------
+// Generate sitemap.xml on every load
 function generateSitemap($db) {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
     $domain = $protocol . $_SERVER['HTTP_HOST'];
