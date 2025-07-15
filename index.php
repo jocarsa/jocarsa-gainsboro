@@ -103,10 +103,10 @@ if ($resultCustomCss) {
     }
 }
 
-// Function to fetch social media links
+// Function to fetch social media links with non-empty URLs
 function fetchSocialMediaLinks($db) {
     $socialMediaLinks = [];
-    $result = $db->query("SELECT name, url, logo FROM social_media ORDER BY category, name");
+    $result = $db->query("SELECT name, url, logo FROM social_media WHERE url != '' ORDER BY category, name");
     while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
         $socialMediaLinks[] = $row;
     }
