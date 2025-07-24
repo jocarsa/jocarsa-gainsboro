@@ -148,7 +148,8 @@ form button[type="submit"]:hover {
 
 /* FOOTER */
 footer {
-    background-color: #3a3a3a;
+    /*background-color: #3a3a3a;*/
+    background:white;
     color: gainsboro;
     padding: 20px;
     text-align: center;
