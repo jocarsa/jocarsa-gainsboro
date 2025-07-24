@@ -156,8 +156,13 @@ footer {
 }
 
 footer img {
-    height: 20px;
+   
     vertical-align: middle;
+   height:20px;
+}
+footer>img{
+width:100%;
+height:auto;
 }
 
 /* Horizontal Rules */
@@ -255,6 +260,7 @@ footer{
 
     footer img {
         margin-bottom: 10px;
+        width:100%;
     }
 }
 
