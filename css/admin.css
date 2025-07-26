@@ -162,7 +162,7 @@ footer img {
    height:20px;
 }
 footer>img{
-width:80%;
+max-width:80%;
 height:auto;
 margin:auto;
 background:white;
