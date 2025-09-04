@@ -269,4 +269,7 @@ footer{
         width:100%;
     }
 }
+.social-media-links{
+  filter:invert(1);
+}
 
