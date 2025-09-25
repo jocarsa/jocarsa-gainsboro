@@ -181,6 +181,7 @@ hr {
 iframe {
     border: none;
     width: 100%;
+    height:600px;
 }
 
 /* Make sure <body> and <html> span full width (already normal) */
